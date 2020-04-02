@@ -1,0 +1,10 @@
+name: wehouse
+title:
+username:
+account: wehouse
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1995206
+bundleId: 2923969
+url: https://wehouse.shinyapps.io/wehouse/
+when: 1585161758.47958
