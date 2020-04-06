@@ -8,7 +8,16 @@ for(p in packages){library
   library(p, character.only = T)
 }
 
-Overview <- read_csv("data/Overview1.csv")
+Overview2 <- read_csv("data/Overview2.csv")
+View(Overview2)
+
+#Supposed 
+p <- ggplot(Overview, aes(x=`Year-Month`, y=`Unit Area (PSF)`, color=`Unit Area (PSF)`, size=`Unit Area (PSF)`)) +
+  geom_point() +
+  theme(legend.position="none")
+p3 <- ggMarginal(p, type="boxplot")
+p3
+
 
 realis <- read_csv("data/TreeMap.csv")
 
