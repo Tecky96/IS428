@@ -4,7 +4,7 @@
 #                          token='44CF7E15C51B46C6199937D081330738',
 #                          secret='jBqPDwybIH3N001TSB5UEyoyd82ALl22Rnv/2GXe')
 
-packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra')
+packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice')
 
 for(p in packages){library
     if(!require(p, character.only = T)){
@@ -13,7 +13,11 @@ for(p in packages){library
     library(p, character.only = T)
 }
 
+#Datasets
 realis <- read_csv("data/TreeMap.csv")
+Overview <- read_csv("data/Overview1.csv")
+Overview_scatter <- read_csv("data/Overview2.csv")
+
 
 realis_grouped <- group_by(realis,
                            `Year`,
@@ -25,11 +29,6 @@ realis_summarised <- summarise(realis_grouped,
                                `Total Area` = sum(`Area (SQM)`, na.rm = TRUE),
                                `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
                                `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
-
-
-Overview <- read_csv("data/Overview1.csv")
-
-
 
 #Dashboard header carrying the title of the dashboard
 header <- dashboardHeader(title = "Navigation Bar")  
@@ -54,7 +53,9 @@ body <- dashboardBody(
             h1("Overview Page inclusive of Background and other info", align = "center")
     ),
     tabItem(tabName = "dashboard1",
-            h1("Overview Dashboard", align = "center")
+            h1("Overview Dashboard", align = "center"),
+            plotOutput("Overview1", height="600px", width="1000px"),
+            plotOutput("Overview2", height="600px", width="1000px")
     ),
     tabItem(tabName = "dashboard2",
             h1("Dashboard 2 content", align = "center"),
@@ -85,6 +86,7 @@ body <- dashboardBody(
 ui <- dashboardPage(title = 'Resale Prices in Singapore from 2012 to 2020', header, sidebar, body, skin='red')
 
 server <- function(input, output) {
+  
   output$Treemap <- renderPlot({
   treemapdata <- filter(realis_summarised, `Year` == input$Year)
   .tm <<- 
@@ -98,18 +100,40 @@ server <- function(input, output) {
             title.legend = "Average Resale Price(S$ Per Sq. ft)"
     )
   })
+  
   output$TreemapTable <- DT::renderDataTable({
     DT::datatable(data = realis_summarised %>% select(1:10),
                   options = list(pageLength = 25),
                   rownames = FALSE)
   })
+  
   output$ScatterHist <- renderPlot({
-    p <- ggplot(Overview, aes(x=`Year-Month`, y=`Unit Area (PSF)`, color=`Unit Area (PSF)`, size=`Unit Area (PSF)`)) +
-      geom_point() +
-      theme(legend.position="none")
-    p3 <- ggMarginal(p, type="boxplot")
-    p3
+
+    Scatter <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$resale_price), mean)
+    names(Scatter)[1] <- "resale_price"
+    p1 <- ggplot(Scatter,
+                 aes(y = resale_price, x = remaining_lease)) +
+      geom_point(aes(color = resale_price/(floor_area_sqm*10.7639)))
+    p2 <- ggMarginal(p1, type="boxplot")
+    p2
   })
+  
+  output$Overview1 <- renderPlot({
+    LineBar <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
+    names(LineBar)[1] <- "Year"
+    ggplot(LineBar)  + 
+      geom_bar(aes(x=Year, y=`Unit Area (PSF)`),stat="identity", fill="tan1", colour="sienna3")+
+      geom_line(aes(x=Year, y=Sales),stat="identity")+
+      geom_text(aes(label=Sales, x=Year, y=Sales), colour="black")
+  })
+  output$Overview2 <- renderPlot({
+    xplot <- aggregate(Overview[,c(3,4,5,6,8,9)], by = list(Overview$Flat_Type, Overview$`Year`), mean)
+    names(xplot)[1] <- "Flat_Type"
+    names(xplot)[2] <- "Year"
+    xyplot(`Unit Area (PSF)` ~ Year | Flat_Type, xplot, type = "l", pch=20, layout=c(3,2),
+           main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
+  })
+  
 }
 
 shinyApp(ui, server)

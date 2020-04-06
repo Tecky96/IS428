@@ -11,6 +11,16 @@ for(p in packages){library
 Overview2 <- read_csv("data/Overview2.csv")
 View(Overview2)
 
+Overview <- read_csv("data/Overview1.csv")
+xplot <- aggregate(Overview[,c(3,4,5,6,8,9)], by = list(Overview$Flat_Type, Overview$`Year`), mean)
+names(xplot)[1] <- "Year"
+names(xplot)[2] <- "Flat_Type"
+head(xplot)
+view(xplot)
+
+xplot <- aggregate(Overview, by = list(Overview$`Year`, Overview$Flat_Type), FUN = mean)
+
+
 #Supposed 
 p <- ggplot(Overview, aes(x=`Year-Month`, y=`Unit Area (PSF)`, color=`Unit Area (PSF)`, size=`Unit Area (PSF)`)) +
   geom_point() +
