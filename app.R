@@ -102,7 +102,7 @@ server <- function(input, output) {
   })
   
   output$TreemapTable <- DT::renderDataTable({
-    DT::datatable(data = realis_summarised %>% select(1:10),
+    DT::datatable(data = realis_summarised %>% select(1:8),
                   options = list(pageLength = 25),
                   rownames = FALSE)
   })
@@ -111,26 +111,31 @@ server <- function(input, output) {
 
     Scatter <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$resale_price), mean)
     names(Scatter)[1] <- "resale_price"
+    `Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
+    `Resale Price` <- Scatter$resale_price
+    `Remaining Lease Years` <- Scatter $remaining_lease
     p1 <- ggplot(Scatter,
-                 aes(y = resale_price, x = remaining_lease)) +
-      geom_point(aes(color = resale_price/(floor_area_sqm*10.7639)))
+                 aes(y = `Resale Price`, x = `Remaining Lease Years`)) +
+                 geom_point(aes(color = `Unit Price (PSF)`))
     p2 <- ggMarginal(p1, type="boxplot")
     p2
   })
   
   output$Overview1 <- renderPlot({
     LineBar <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
+    LineBar1 <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
     names(LineBar)[1] <- "Year"
     ggplot(LineBar)  + 
       geom_bar(aes(x=Year, y=`Unit Area (PSF)`),stat="identity", fill="tan1", colour="sienna3")+
       geom_line(aes(x=Year, y=Sales),stat="identity")+
       geom_text(aes(label=Sales, x=Year, y=Sales), colour="black")
   })
+  
   output$Overview2 <- renderPlot({
     xplot <- aggregate(Overview[,c(3,4,5,6,8,9)], by = list(Overview$Flat_Type, Overview$`Year`), mean)
     names(xplot)[1] <- "Flat_Type"
     names(xplot)[2] <- "Year"
-    xyplot(`Unit Area (PSF)` ~ Year | Flat_Type, xplot, type = "l", pch=20, layout=c(3,2),
+    xyplot(`Unit Area (PSF)` ~ Year |Flat_Type, data = xplot, type = "l", pch=19, layout=c(4,2),
            main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
   })
   

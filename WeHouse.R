@@ -12,6 +12,9 @@ Overview2 <- read_csv("data/Overview2.csv")
 View(Overview2)
 
 Overview <- read_csv("data/Overview1.csv")
+LineBar <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
+names(LineBar)[1] <- "Year"
+
 xplot <- aggregate(Overview[,c(3,4,5,6,8,9)], by = list(Overview$Flat_Type, Overview$`Year`), mean)
 names(xplot)[1] <- "Year"
 names(xplot)[2] <- "Flat_Type"
