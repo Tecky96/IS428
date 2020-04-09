@@ -14,6 +14,7 @@ for(p in packages){library
 }
 
 #Datasets
+overview <- read_csv('data/Overview.csv')
 realis <- read_csv("data/TreeMap.csv")
 Overview <- read_csv("data/Overview1.csv")
 Overview_scatter <- read_csv("data/Overview2.csv")
@@ -68,6 +69,10 @@ body <- dashboardBody(
     ),
     tabItem(tabName = "dashboard3",
             h1("Dashboard 3 content", align = "center"),
+            selectInput(inputId = "variable", "Please Select a Year",
+                        unique(overview$Year),
+                        selected = 2012),
+            plotOutput("distPlot"),
             plotOutput("ScatterHist", height="600px", width="1000px")
             
     ),
@@ -139,6 +144,16 @@ server <- function(input, output) {
            main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
   })
   
+  
+  output$distPlot <- renderPlot({ 
+    map <- filter(overview, Year == input$variable)
+    
+    ggplot(map, aes(x=`Year-Month`, y=Median, colour = Storey_Level,
+                  group = Storey_Level)) +
+    geom_line() +
+    facet_wrap(~`HDB Town`, scales="free_y") +
+    labs(x="\nMonth", y = "Median Resale Price\n", title = "Resale HDB Market Trend by HDB Town 2012 - 2020\n")
+  })
 }
 
 shinyApp(ui, server)
