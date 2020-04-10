@@ -13,12 +13,13 @@ for(p in packages){library
     library(p, character.only = T)
 }
 
-#Datasets
+#-------------------------------Datasets------------------------------#
 overview <- read_csv('data/Overview.csv')
 realis <- read_csv("data/TreeMap.csv")
 Overview <- read_csv("data/Overview1.csv")
 Overview_scatter <- read_csv("data/Overview2.csv")
-logo <- img(src="WeHouse_Logo.png", width=220, height=80, align = "centre")
+logo <- img(src="Logo
+            .png", width=220, height=80, align = "centre")
 
 realis_grouped <- group_by(realis,
                            `Year`,
@@ -54,7 +55,7 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   tabItems(
     tabItem(tabName = "Overview",
-            tags$img(src = 'cheatsheet.jpg', height = 500, width = 1000),
+            HTML('<center><img src="cheatsheet.jpg", height=400, width=600></center>'),
             h1("Problem"),
             span(uiOutput("problem"),style="font-family: Tahoma; font-size: 18px;
                  color:grey;"),
@@ -67,13 +68,13 @@ body <- dashboardBody(
     ),
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
-            h1("Overview Dashboard", align = "center"),
+            h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
             plotOutput("Overview1", height="600px", width="1000px"),
             plotOutput("Overview2", height="600px", width="1000px")
     ),
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     tabItem(tabName = "dashboard2",
-            h1("Dashboard 2 content", align = "center"),
+            h1("Dashboard 2 content", align = "center", style="font-family: Tahoma; font-size: 24px;"),
             selectInput("Year", "Select Year:", unique(realis_summarised$`Year`), selected = 2020, multiple = FALSE
                        ),
             radioButtons("Plot", "Choose the visualisation to see:",
@@ -83,7 +84,7 @@ body <- dashboardBody(
     ),
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
     tabItem(tabName = "dashboard3",
-            h1("Dashboard 3 content", align = "center"),
+            h1("Dashboard 3 content", align = "center", style="font-family: Tahoma; font-size: 24px;"),
             selectInput(inputId = "variable", "Please Select a Year",
                         unique(overview$Year),
                         selected = 2012),
@@ -109,8 +110,8 @@ ui <- dashboardPage(title = 'Resale Prices in Singapore from 2012 to 2020', head
 
 server <- function(input, output) {
   output$problem <- renderText({
-    HTML("There is many online property information that claims to be 'cheat sheets' that could help Singaporeans decide on their desired choice of homes.</br>
-    In the context of this project, Resale HDBs is the focal point of our project. Choosing a resale HDB has never been easy as there are many factors to consider such as location, HDB type, number of remaining lease years, resale value, etc.</br> 
+    HTML("There is many online property information that claims to be 'cheat sheets' that could help Singaporeans decide on their desired choice of homes.</br></br>
+    In the context of this project, Resale HDBs is the focal point of our project. Choosing a resale HDB has never been easy as there are many factors to consider such as location, HDB type, number of remaining lease years, resale value, etc.</br></br> 
     On top of that, thousands of Resale HDBs transactions are happening each month, making it almost impossible for an owner to get a view of every transaction. 
          Therefore, the majority of buyers and sellers have to consult property agents for their services.")
   })
