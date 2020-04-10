@@ -18,7 +18,7 @@ overview <- read_csv('data/Overview.csv')
 realis <- read_csv("data/TreeMap.csv")
 Overview <- read_csv("data/Overview1.csv")
 Overview_scatter <- read_csv("data/Overview2.csv")
-
+logo <- img(src="WeHouse_Logo.png", width=72, height=72, align = "centre")
 
 realis_grouped <- group_by(realis,
                            `Year`,
@@ -32,7 +32,10 @@ realis_summarised <- summarise(realis_grouped,
                                `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
 
 #Dashboard header carrying the title of the dashboard
-header <- dashboardHeader(title = "Navigation Bar")  
+Nav_Title <- "Navigation Bar"
+header <- dashboardHeader(
+  title = logo
+  )
 
 #Sidebar content of the dashboard
 sidebar <- dashboardSidebar(
@@ -44,14 +47,21 @@ sidebar <- dashboardSidebar(
     menuItem("Dataset", tabName = "Datasets", icon = icon("fas fa-database"),
              menuSubItem("Tree Map Dataset", tabName = "sub_1"), 
              menuSubItem("Map Dataset", tabName = "sub_2"),
-             menuSubItem("Overview Dataset", tabName = "sub_3")
-    ))
-)
+             menuSubItem("Overview Dataset", tabName = "sub_3"))
+))
 
 body <- dashboardBody(
   tabItems(
     tabItem(tabName = "Overview",
-            h1("Overview Page inclusive of Background and other info", align = "center")
+            h1("Problem"),
+            span(uiOutput("problem"),style="font-family: Tahoma; font-size: 18px;
+                 color:grey;"),
+            h1("Motivation"),
+            span(uiOutput("motivation"),style="font-family: Tahoma; font-size: 18px;
+                 color:grey;"),
+            h1("Our objectives"),
+            span(uiOutput("objective"),style="font-family: Tahoma; font-size: 18px;
+                 color:grey;") 
     ),
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center"),
@@ -88,9 +98,30 @@ body <- dashboardBody(
     )
 ))
 
-ui <- dashboardPage(title = 'Resale Prices in Singapore from 2012 to 2020', header, sidebar, body, skin='red')
+ui <- dashboardPage(title = 'Resale Prices in Singapore from 2012 to 2020', header, sidebar, body, skin='yellow') #change the look of the dashboard
 
 server <- function(input, output) {
+  output$problem <- renderText({
+    HTML("There is many online property information that claims to be 'cheat sheets' that could help Singaporeans decide on their desired choice of homes.</br>
+    In the context of this project, Resale HDBs is the focal point of our project. Choosing a resale HDB has never been easy as there are many factors to consider such as location, HDB type, number of remaining lease years, resale value, etc.</br> 
+    On top of that, thousands of Resale HDBs transactions are happening each month, making it almost impossible for an owner to get a view of every transaction. 
+         Therefore, the majority of buyers and sellers have to consult property agents for their services.")
+  })
+  
+  output$motivation <- renderText({
+    HTML("Our team would like to minimise the number of visualisations a prospective buyer would have to see.
+    The data visualisations provided were generally overloaded with information, hence, we aim to create concise visualisations surrounding resale HDB trends. 
+    It is vital to relay critical information pertaining to yearly sales trends, average resale prices and volume based on floor level.")
+  })
+  
+  output$objective <- renderText({
+    HTML("In this project, we aim to deliver a focused and compact visualisation to allow Singaporeans to be well-informed of the average HDBs resale prices around their desired location.
+         <ul>
+         <li>Overall change in HDB price trends over time by each planning region and by HDB Town</li>
+         <li>Comparing price differences for each HDB Town area and planning region given the remaining lease of the HDB flat</li>
+         <li>Determine which month had the highest or lowest resale price sold and number of transactions</li>
+         <li>Identify the most expensive streets within each Town area given the floor </li></ul>")
+  })
   
   output$Treemap <- renderPlot({
   treemapdata <- filter(realis_summarised, `Year` == input$Year)
