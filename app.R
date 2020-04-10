@@ -18,7 +18,7 @@ overview <- read_csv('data/Overview.csv')
 realis <- read_csv("data/TreeMap.csv")
 Overview <- read_csv("data/Overview1.csv")
 Overview_scatter <- read_csv("data/Overview2.csv")
-logo <- img(src="WeHouse_Logo.png", width=50, height=50, align = "centre")
+logo <- img(src="WeHouse_Logo.png", width=220, height=80, align = "centre")
 
 realis_grouped <- group_by(realis,
                            `Year`,
