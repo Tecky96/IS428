@@ -170,9 +170,11 @@ server <- function(input, output) {
     LineBar1 <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
     names(LineBar)[1] <- "Year"
     ggplot(LineBar)  + 
-      geom_bar(aes(x=Year, y=`Unit Area (PSF)`),stat="identity", fill="tan1", colour="sienna3")+
-      geom_line(aes(x=Year, y=Sales),stat="identity")+
-      geom_text(aes(label=Sales, x=Year, y=Sales), colour="black")
+      geom_bar(aes(x=Year, y=`Unit Area (PSF)`), size=1,stat="identity", fill="tan1", colour="sienna3")+
+      geom_line(aes(x=Year, y=Sales), size=1.5 , color="green", stat="identity")+
+      geom_point(aes(x=Year, y=Sales),size=3, colour="green")+
+      scale_y_continuous(sec.axis = sec_axis(~./3, name = "No. of Transactions"))+
+      geom_text(aes(label=sprintf("%0.2f", round(Sales, digits = 2)), x=Year, y=Sales), colour="white", check_overlap = TRUE)
   })
   
   output$Overview2 <- renderPlot({
