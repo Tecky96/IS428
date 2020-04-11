@@ -1,12 +1,18 @@
 
 packages = c('treemap','tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'devtools', 'ggplotly')
 
+install.packages("crosstalk")
+library(gapminder)
+
+
 for(p in packages){library
   if(!require(p, character.only = T)){
     install.packages(p)
   }
   library(p, character.only = T)
 }
+Overview <- read_csv("data/Overview1.csv")
+
 
 import plotly.express as px
 print(px.data.iris.__doc__)

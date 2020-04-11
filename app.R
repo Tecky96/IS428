@@ -7,13 +7,22 @@
 
 packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice', 'geofacet', 'plotly')
 
+library(treemap)
+library(tidyverse)
+library(shiny)
+library(shinydashboard)
+library(dplyr)
+library(ggplot2)
+library(ggExtra)
+library(lattice)
+library(geofacet)
 
-for(p in packages){library
-  if(!require(p, character.only = T)){
-    install.packages(p)
-  }
-  library(p, character.only = T)
-}
+# for(p in packages){library
+#   if(!require(p, character.only = T)){
+#     install.packages(p)
+#   }
+#   library(p, character.only = T)
+# }
 
 #-------------------------------Datasets------------------------------#
 realis <- read_csv("data/TreeMap.csv")
@@ -31,17 +40,16 @@ Nav_Title <- "Navigation Bar"
 header <- dashboardHeader(
   title = logo
 )
-  
 
 #-------------------------------SIDEBAR OF CONTENTS------------------------------#
 sidebar <- dashboardSidebar(
   sidebarMenu(
-    menuItem("Overview", tabName = "Overview", icon = icon("dashboard")),
-    menuItem("Dashboard 1", tabName = "dashboard1", icon = icon("dashboard")),
-    menuItem("Dashboard 2", tabName = "dashboard2", icon = icon("dashboard")),
+    menuItem("Introduction", tabName = "Overview", icon = icon("dashboard")),
+    menuItem("Overview", tabName = "dashboard1", icon = icon("dashboard")),
+    menuItem("Segregated Pricings", tabName = "dashboard2", icon = icon("dashboard")),
     menuItem("Dashboard 3", tabName = "dashboard3", icon = icon("dashboard"),
              menuSubItem("GeoFacet", tabName = "D3_1"), 
-             menuSubItem("Scatter Distribution", tabName="D3_2")
+             menuSubItem("Scatterplot", tabName="D3_2")
              ),
     menuItem("Dataset", tabName = "Datasets", icon = icon("fas fa-database"),
              menuSubItem("Tree Map Dataset", tabName = "sub_1"), 
@@ -63,6 +71,8 @@ body <- dashboardBody(
             span(uiOutput("objective"),style="font-family: Tahoma; font-size: 18px;
                  color:grey;") 
     ),
+    
+    
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
@@ -73,16 +83,17 @@ body <- dashboardBody(
             plotlyOutput("LB"),
             plotlyOutput("Overview2", height="450px", width="100%")
     ),
+
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
-    
     tabItem(tabName = "dashboard2",
-           h1("Treemap of Floor Categories vs Price Level", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-           box(selectInput("Year", "Select Year:", unique(realis$`Year`), selected = 2020, multiple = FALSE)),
-           box(radioButtons("Plot", "Choose the visualisation to see:",
-                        c("Resale Price" = "Average Resale Price",
-                          "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
-           plotOutput("Treemap",height="600px", width="100%")
+            h1("HDB Floor Categories vs. Pricing", align = "center", style="font-family: Tahoma; font-size: 24px;"),
+            box(selectInput("Year", "Select Year:", unique(realis$`Year`), selected = 2020, multiple = FALSE)),
+            box(radioButtons("Plot", "Choose the visualisation to see:",
+                             c("Resale Price" = "Average Resale Price",
+                               "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
+            plotOutput("Treemap",height="600px", width="100%")
     ),
+
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
     tabItem(tabName = "D3_1",
             h1("GeoFacet of HDB AREA vs Price", align = "center", style="font-family: Tahoma; font-size: 24px;"),
@@ -238,17 +249,17 @@ server <- function(input, output) {
   })
   
 
-  
   output$distPlot <- renderPlot({ 
     map <- filter(select_data, Year == input$variable, Storey_Level == input$variable1)
-    ggplot(map, aes(x=`Year-Month`, y=`Median_Resale_Price`)) +
+    
+    ggplot(map, aes(x=`Year-Month`, y=`Median Unit Price`)) +
       geom_line() +
-      facet_geo(~ Code, grid= select_data1, label = "name", scales = "free_y") +
+      facet_geo(~ Code, grid= select_data1, label = "name") +
       scale_x_discrete(guide = guide_axis(n.dodge =2))+
       scale_x_continuous(breaks = c(1,3,5,7,9,11))+
-      labs(title = "Resale HDB Market Trend by HDB Town 2012 - 2020\n\n",
+      labs(title = "Resale HDB Market Trend by HDB Town\n\n",
            x = "Month\n\n\n",
-           y ="Median Resale Price\n\n\n") +
+           y ="Median Unit Price\n\n\n") +
       scale_y_continuous(labels = function(x) format(x, big.mark = ",",
                                                      scientific = FALSE)) +
       theme(plot.title = element_text(color = "black",size = 30, face = "bold.italic"),
@@ -258,9 +269,6 @@ server <- function(input, output) {
             strip.text = element_text(color = 'white', size= 7, face = "bold"),
             panel.border = element_rect(colour = "black", fill = NA, size = 0.2))
   })
-  
- 
-  
 }
 
 shinyApp(ui, server)
