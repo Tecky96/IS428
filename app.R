@@ -49,7 +49,10 @@ sidebar <- dashboardSidebar(
     menuItem("Overview", tabName = "Overview", icon = icon("dashboard")),
     menuItem("Dashboard 1", tabName = "dashboard1", icon = icon("dashboard")),
     menuItem("Dashboard 2", tabName = "dashboard2", icon = icon("dashboard")),
-    menuItem("Dashboard 3", tabName = "dashboard3", icon = icon("dashboard")),
+    menuItem("Dashboard 3", tabName = "dashboard3", icon = icon("dashboard"),
+             menuSubItem("GeoFacet", tabName = "D3_1"), 
+             menuSubItem("Scatter Distribution", tabName="D3_2")
+             ),
     menuItem("Dataset", tabName = "Datasets", icon = icon("fas fa-database"),
              menuSubItem("Tree Map Dataset", tabName = "sub_1"), 
              menuSubItem("Map Dataset", tabName = "sub_2"),
@@ -77,28 +80,37 @@ body <- dashboardBody(
             plotOutput("Overview2", height="600px", width="100%")
     ),
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
+    
     tabItem(tabName = "dashboard2",
            h1("Treemap of Floor Categories vs Price Level", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-           box(background = "black", selectInput("Year", "Select Year:", unique(realis_summarised$`Year`), selected = 2020, multiple = FALSE)),
-           box(background = "black", radioButtons("Plot", "Choose the visualisation to see:",
+           box(selectInput("Year", "Select Year:", unique(realis_summarised$`Year`), selected = 2020, multiple = FALSE)),
+           box(radioButtons("Plot", "Choose the visualisation to see:",
                         c("Resale Price" = "Average Resale Price",
                           "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
-            plotOutput("Treemap",height="700px", width="100%")
+           plotOutput("Treemap",height="700px", width="100%")
     ),
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
-    tabItem(tabName = "dashboard3",
-            h1("Dashboard 3 content", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            box(background="black",selectInput(inputId = "variable", "Please select a year",
+    tabItem(tabName = "D3_1",
+            h1("GeoFacet of HDB AREA vs Price", align = "center", style="font-family: Tahoma; font-size: 24px;"),
+            box(selectInput(inputId = "variable", "Please select a year",
                         unique(select_data$Year),
                         selected = 2012, multiple = FALSE)),
-            box(background="black",selectInput(inputId = "variable1","Please select a floor level type",
+            box(selectInput(inputId = "variable1","Please select a floor level type",
                         unique(select_data$Storey_Level),
                         selected = NULL, multiple = FALSE)),
-            box(background="black",width="100%",plotOutput("distPlot", height="1000px", width="100%")
-            #plotOutput("ScatterHist", height="500px", width="100%")
-            )
-            
+            #box(width="100%", height="100%",
+                plotOutput("distPlot", height="800px", width="100%")
     ),
+tabItem(tabName = "D3_2",
+        h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
+        box(selectInput(inputId = "variable", "Please select a year",
+                                           unique(select_data$Year),
+                                           selected = 2012, multiple = FALSE)),
+        box(selectInput(inputId = "variable1","Please select a floor level type",
+                                           unique(select_data$Storey_Level),
+                                           selected = NULL, multiple = FALSE)),
+        box(width="100%", plotOutput("ScatterHist", height="600px", width="90%"))
+),
 
 #-------------------------------DATASET TAB------------------------------#
     tabItem(tabName = "sub_1",
