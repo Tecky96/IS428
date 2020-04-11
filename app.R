@@ -5,13 +5,14 @@
 #                          secret='jBqPDwybIH3N001TSB5UEyoyd82ALl22Rnv/2GXe')
 
 
-packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice','geofacet')
+packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice', 'geofacet', 'plotly')
+
 
 for(p in packages){library
-    if(!require(p, character.only = T)){
-        install.packages(p)
-    }
-    library(p, character.only = T)
+  if(!require(p, character.only = T)){
+    install.packages(p)
+  }
+  library(p, character.only = T)
 }
 
 #-------------------------------Datasets------------------------------#
@@ -24,16 +25,6 @@ select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
 
 logo <- img(src="weHouse_logo.png", width=220, height=75, align = "centre")
 
-realis_grouped <- group_by(realis,
-                           `Year`,
-                           `Planning Region`, `HDB Town`,
-                           Storey_Level)
-
-realis_summarised <- summarise(realis_grouped, 
-                               `Total Unit Sold` = sum(Sales, na.rm = TRUE),
-                               `Total Area` = sum(`Area (SQM)`, na.rm = TRUE),
-                               `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
-                               `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
 
 #-------------------------------HEADER DASHBOARD TITLE------------------------------#
 Nav_Title <- "Navigation Bar"
@@ -75,14 +66,18 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            plotOutput("Overview1", height="400px", width="100%"),
+            box(radioButtons("Plot", "Choose the visualisation to see:",
+                             c("Resale Price" = "Average Resale Price",
+                               "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
+            #plotOutput("Overview1", height="400px", width="100%"),
+            plotlyOutput("LB"),
             plotOutput("Overview2", height="450px", width="100%")
     ),
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     
     tabItem(tabName = "dashboard2",
            h1("Treemap of Floor Categories vs Price Level", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-           box(selectInput("Year", "Select Year:", unique(realis_summarised$`Year`), selected = 2020, multiple = FALSE)),
+           box(selectInput("Year", "Select Year:", unique(realis$`Year`), selected = 2020, multiple = FALSE)),
            box(radioButtons("Plot", "Choose the visualisation to see:",
                         c("Resale Price" = "Average Resale Price",
                           "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
@@ -151,6 +146,16 @@ server <- function(input, output) {
   })
   
   output$Treemap <- renderPlot({
+  realis_grouped <- group_by(realis,
+                             `Year`,
+                             `Planning Region`, `HDB Town`,
+                             Storey_Level)
+  
+  realis_summarised <- summarise(realis_grouped, 
+                                 `Total Unit Sold` = sum(Sales, na.rm = TRUE),
+                                 `Total Area` = sum(`Area (SQM)`, na.rm = TRUE),
+                                 `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
+                                 `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
   treemapdata <- filter(realis_summarised, `Year` == input$Year)
   .tm <<- 
     treemap(treemapdata,
@@ -171,7 +176,7 @@ server <- function(input, output) {
   })
   
   output$ScatterHist <- renderPlot({
-
+ 
     Scatter <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$resale_price), mean)
     names(Scatter)[1] <- "resale_price"
     `Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
@@ -180,11 +185,13 @@ server <- function(input, output) {
     p1 <- ggplot(Scatter,
                  aes(y = `Resale Price`, x = `Remaining Lease Years`)) +
                  geom_point(aes(y = `Resale Price`, x = `Remaining Lease Years`,color = `Unit Price (PSF)`))
-    p2 <- ggMarginal(p1, type="boxplot")
-    p2
+    p3 <- ggMarginal(p1, type="boxplot")
+    p3
     
   })
   
+
+  #can remove this
   output$Overview1 <- renderPlot({
     LineBar <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
     LineBar1 <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
@@ -198,11 +205,24 @@ server <- function(input, output) {
       geom_text(aes(label=sprintf("%0.2f", round(Sales, digits = 2)), x=Year, y=Sales), colour="white", check_overlap = TRUE)
   })
   
+  output$LB <- renderPlotly({
+    Overview %>%
+      group_by(Year) %>%
+      summarize(Unit_Area = mean(`Average Resale Price`), Sale = sum(Sales)) %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('darkolivegreen1'), name = "Unit Area (PSF)") %>%
+      add_trace(x = ~Year, y = ~Unit_Area, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
+      layout(title = "Overview of Resale",
+             xaxis = list(title = "Year"),
+             yaxis = list(side = 'left', title = "Sales Volume"),
+             yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))
+  })
+  
   output$Overview2 <- renderPlot({
-    xplot <- aggregate(Overview[,c(3,4,5,6,8,9)], by = list(Overview$Flat_Type, Overview$`Year`), mean)
-    names(xplot)[1] <- "Flat_Type"
-    names(xplot)[2] <- "Year"
-    xyplot(`Unit Area (PSF)` ~ Year |Flat_Type, data = xplot, type = "l", pch=19, layout=c(4,2),
+    xplot_data <- Overview %>%
+      group_by(Year, Flat_Type) %>%
+      summarize(Avg_Resale_Price = mean(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
+    
+    xyplot(Unit_Area ~ Year |Flat_Type, data = xplot_data,type = "l", pch=19, layout=c(4,2),
            strip = strip.custom(bg="lightgrey",
            par.strip.text=list(col="black", cex=.8, font=3)),
            main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
@@ -228,6 +248,9 @@ server <- function(input, output) {
             strip.text = element_text(color = 'white', size= 7, face = "bold"),
             panel.border = element_rect(colour = "black", fill = NA, size = 0.2))
   })
+  
+ 
+  
 }
 
 shinyApp(ui, server)

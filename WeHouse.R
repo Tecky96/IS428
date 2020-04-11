@@ -11,6 +11,11 @@ install_github("hafen/geofacet")
 install_github("shiny", "rstudio")
 install_github('hadley/ggplot2')
 
+Overview_scatter <- read_csv("data/Overview2.csv")
+head(Overview_scatter)
+select_data <- read_csv('data/Map.csv')
+head(select_data)
+
 Overview2 <- read_csv("data/Overview2.csv")
 View(Overview2)
 
