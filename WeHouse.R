@@ -1,5 +1,5 @@
 
-packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2')
+packages = c('treemap','tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'devtools', 'ggplotly')
 
 for(p in packages){library
   if(!require(p, character.only = T)){
@@ -7,6 +7,9 @@ for(p in packages){library
   }
   library(p, character.only = T)
 }
+install_github("hafen/geofacet")
+install_github("shiny", "rstudio")
+install_github('hadley/ggplot2')
 
 Overview2 <- read_csv("data/Overview2.csv")
 View(Overview2)
