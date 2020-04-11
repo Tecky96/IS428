@@ -4,7 +4,7 @@
 #                          token='44CF7E15C51B46C6199937D081330738',
 #                          secret='jBqPDwybIH3N001TSB5UEyoyd82ALl22Rnv/2GXe')
 
-packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice')
+packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice','ggiraph')
 
 for(p in packages){library
     if(!require(p, character.only = T)){
@@ -160,9 +160,10 @@ server <- function(input, output) {
     `Remaining Lease Years` <- Scatter $remaining_lease
     p1 <- ggplot(Scatter,
                  aes(y = `Resale Price`, x = `Remaining Lease Years`)) +
-                 geom_point(aes(color = `Unit Price (PSF)`))
+                 geom_point(aes(y = `Resale Price`, x = `Remaining Lease Years`,color = `Unit Price (PSF)`))
     p2 <- ggMarginal(p1, type="boxplot")
     p2
+    
   })
   
   output$Overview1 <- renderPlot({
