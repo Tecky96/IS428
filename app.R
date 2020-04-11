@@ -5,7 +5,7 @@
 #                          secret='jBqPDwybIH3N001TSB5UEyoyd82ALl22Rnv/2GXe')
 
 
-packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice')
+packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice','geofacet')
 
 for(p in packages){library
     if(!require(p, character.only = T)){
@@ -22,8 +22,7 @@ Overview_scatter <- read_csv("data/Overview2.csv")
 select_data <- read_csv('data/Map.csv')
 select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
 
-logo <- img(src="Logo
-            .png", width=220, height=80, align = "centre")
+logo <- img(src="weHouse_logo.png", width=220, height=75, align = "centre")
 
 realis_grouped <- group_by(realis,
                            `Year`,
@@ -76,8 +75,8 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            plotOutput("Overview1", height="600px", width="100%"),
-            plotOutput("Overview2", height="600px", width="100%")
+            plotOutput("Overview1", height="400px", width="100%"),
+            plotOutput("Overview2", height="450px", width="100%")
     ),
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     
@@ -87,7 +86,7 @@ body <- dashboardBody(
            box(radioButtons("Plot", "Choose the visualisation to see:",
                         c("Resale Price" = "Average Resale Price",
                           "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
-           plotOutput("Treemap",height="700px", width="100%")
+           plotOutput("Treemap",height="600px", width="100%")
     ),
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
     tabItem(tabName = "D3_1",
@@ -99,7 +98,7 @@ body <- dashboardBody(
                         unique(select_data$Storey_Level),
                         selected = NULL, multiple = FALSE)),
             #box(width="100%", height="100%",
-                plotOutput("distPlot", height="800px", width="100%")
+                plotOutput("distPlot", height="700px", width="100%")
     ),
 tabItem(tabName = "D3_2",
         h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
@@ -195,7 +194,7 @@ server <- function(input, output) {
       geom_line(aes(x=Year, y=Sales), size=1.5 , color="#CC6666", stat="identity")+
       geom_point(aes(x=Year, y=Sales),size=3, colour="#660000")+
       scale_y_continuous(sec.axis = sec_axis(~./3, name = "No. of Transactions"))+
-      scale_x_date(date_breaks = "1 year")+
+      scale_x_continuous()+
       geom_text(aes(label=sprintf("%0.2f", round(Sales, digits = 2)), x=Year, y=Sales), colour="white", check_overlap = TRUE)
   })
   
