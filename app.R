@@ -4,6 +4,7 @@
 #                          token='44CF7E15C51B46C6199937D081330738',
 #                          secret='jBqPDwybIH3N001TSB5UEyoyd82ALl22Rnv/2GXe')
 
+
 packages = c('treemap', 'tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'ggExtra', 'lattice')
 
 for(p in packages){library
@@ -14,10 +15,13 @@ for(p in packages){library
 }
 
 #-------------------------------Datasets------------------------------#
-overview <- read_csv('data/Overview.csv')
 realis <- read_csv("data/TreeMap.csv")
 Overview <- read_csv("data/Overview1.csv")
 Overview_scatter <- read_csv("data/Overview2.csv")
+
+select_data <- read_csv('data/Map.csv')
+select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
+
 logo <- img(src="Logo
             .png", width=220, height=80, align = "centre")
 
@@ -69,29 +73,33 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            plotOutput("Overview1", height="600px", width="1000px"),
-            plotOutput("Overview2", height="600px", width="1000px")
+            plotOutput("Overview1", height="600px", width="100%"),
+            plotOutput("Overview2", height="600px", width="100%")
     ),
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     tabItem(tabName = "dashboard2",
-            h1("Dashboard 2 content", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            selectInput("Year", "Select Year:", unique(realis_summarised$`Year`), selected = 2020, multiple = FALSE
-                       ),
-            radioButtons("Plot", "Choose the visualisation to see:",
-                         c("Resale Price" = "Average Resale Price",
-                           "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price"),
-            plotOutput("Treemap",height="700px", width="1000px")
+           h1("Treemap of Floor Categories vs Price Level", align = "center", style="font-family: Tahoma; font-size: 24px;"),
+           box(background = "black", selectInput("Year", "Select Year:", unique(realis_summarised$`Year`), selected = 2020, multiple = FALSE)),
+           box(background = "black", radioButtons("Plot", "Choose the visualisation to see:",
+                        c("Resale Price" = "Average Resale Price",
+                          "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
+            plotOutput("Treemap",height="700px", width="100%")
     ),
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
     tabItem(tabName = "dashboard3",
             h1("Dashboard 3 content", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            selectInput(inputId = "variable", "Please Select a Year",
-                        unique(overview$Year),
-                        selected = 2012),
-            plotOutput("distPlot"),
-            plotOutput("ScatterHist", height="600px", width="1000px")
+            box(background="black",selectInput(inputId = "variable", "Please select a year",
+                        unique(select_data$Year),
+                        selected = 2012, multiple = FALSE)),
+            box(background="black",selectInput(inputId = "variable1","Please select a floor level type",
+                        unique(select_data$Storey_Level),
+                        selected = NULL, multiple = FALSE)),
+            box(background="black",width="100%",plotOutput("distPlot", height="1000px", width="100%")
+            #plotOutput("ScatterHist", height="500px", width="100%")
+            )
             
     ),
+
 #-------------------------------DATASET TAB------------------------------#
     tabItem(tabName = "sub_1",
             h1("Treemap Dataset", align = "center"),
@@ -174,7 +182,7 @@ server <- function(input, output) {
       geom_line(aes(x=Year, y=Sales), size=1.5 , color="#CC6666", stat="identity")+
       geom_point(aes(x=Year, y=Sales),size=3, colour="#660000")+
       scale_y_continuous(sec.axis = sec_axis(~./3, name = "No. of Transactions"))+
-      scale_x_continuous()+
+      scale_x_date(date_breaks = "1 year")+
       geom_text(aes(label=sprintf("%0.2f", round(Sales, digits = 2)), x=Year, y=Sales), colour="white", check_overlap = TRUE)
   })
   
@@ -190,13 +198,23 @@ server <- function(input, output) {
   
   
   output$distPlot <- renderPlot({ 
-    map <- filter(overview, Year == input$variable)
-    
-    ggplot(map, aes(x=`Year-Month`, y=Median, colour = Storey_Level,
-                  group = Storey_Level)) +
-    geom_line() +
-    facet_wrap(~`HDB Town`, scales="free_y") +
-    labs(x="\nMonth", y = "Median Resale Price\n", title = "Resale HDB Market Trend by HDB Town 2012 - 2020\n")
+    map <- filter(select_data, Year == input$variable, Storey_Level == input$variable1)
+    ggplot(map, aes(x=`Year-Month`, y=`Median_Resale_Price`)) +
+      geom_line() +
+      facet_geo(~ Code, grid= select_data1, label = "name", scales = "free_y") +
+      scale_x_discrete(guide = guide_axis(n.dodge =2))+
+      scale_x_continuous(breaks = c(1,3,5,7,9,11))+
+      labs(title = "Resale HDB Market Trend by HDB Town 2012 - 2020\n\n",
+           x = "Month\n\n\n",
+           y ="Median Resale Price\n\n\n") +
+      scale_y_continuous(labels = function(x) format(x, big.mark = ",",
+                                                     scientific = FALSE)) +
+      theme(plot.title = element_text(color = "black",size = 30, face = "bold.italic"),
+            axis.title.x = element_text(color = "black", size = 15, face ="bold"),
+            axis.title.y = element_text(color = "black", size = 15, face = "bold"),
+            strip.background = element_rect((fill = "#2E8B57")),
+            strip.text = element_text(color = 'white', size= 7, face = "bold"),
+            panel.border = element_rect(colour = "black", fill = NA, size = 0.2))
   })
 }
 
