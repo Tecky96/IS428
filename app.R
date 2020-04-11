@@ -105,7 +105,7 @@ body <- dashboardBody(
         #                                    selected = NULL, multiple = FALSE)),
         #box(width="100%", plotOutput("ScatterHist", height="600px", width="90%"))
         
-        selectizeInput("year", "Select your year", unique(Overview_scatter$Year), multiple = FALSE),
+        selectizeInput("scatteryear", "Select your year", unique(Overview_scatter$Year), multiple = FALSE),
         selectizeInput("HDB", "Select your HDB Town", unique(Overview_scatter$`HDB Town`), multiple = FALSE),
         plotlyOutput("ScatterHist", height="700px")
 ),
@@ -149,8 +149,8 @@ server <- function(input, output) {
          <li>Identify the most expensive streets within each Town area given the floor </li></ul>")
   })
   
-
-  #-------------------------------DASHBOARD 1------------------------------#
+  
+#---------------------------------------------Dashboard 1---------------------------------------------------#
   
   output$LB <- renderPlotly({
     Overview %>%
@@ -176,7 +176,7 @@ server <- function(input, output) {
     
   })
   
-  #-------------------------------DASHBOARD 2------------------------------#
+  #---------------------------------------------Dashboard 2---------------------------------------------------#
   
   output$Treemap <- renderPlot({
   realis_grouped <- group_by(realis,
@@ -208,18 +208,22 @@ server <- function(input, output) {
                   rownames = FALSE)
   })
   
+  #---------------------------------------------Dashboard 3---------------------------------------------------#
   
-  #-------------------------------DASHBOARD 3------------------------------#
   
   output$ScatterHist <- renderPlotly({
     
+    Scatter_data <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$resale_price, Overview_scatter$Year), mean)
+    names(Scatter_data)[1] <- "resale_price"
+    names(Scatter_data)[2] <- "Year"
     
-    Scatter <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$year, Overview_scatter$resale_price), mean)
-    names(Scatter)[1] <- "resale_price"
     #`Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
-    `Resale Price` <- Scatter$resale_price
-    `Remaining Lease Years` <- Scatter$remaining_lease
-    Scatter <- Scatter[Scatter$year == input$year,]
+    `Resale Price` <- Scatter_data$resale_price
+    `Remaining Lease Years` <- Scatter_data$remaining_lease
+    `Year` <- Scatter_data$Year
+    Scatter <- filter(Scatter_data, `Year` == input$scatteryear)
+    view(Scatter)
+    
     
     p1 <- subplot(plot_ly(type='box', color=I("indianred2")) %>%
                     add_boxplot(data=Scatter, x=~`Remaining Lease Years`),
@@ -230,27 +234,7 @@ server <- function(input, output) {
                   nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
                   shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
     p1
-    
-    # p2 <- p1 %>% layout(showlegend = FALSE,
-    #                     title = "Button Restyle",
-    #                     xaxis = list(domain = c(0.1, 1)),
-    #                     yaxis = list(title = "y"),
-    #                     updatemenus = list(
-    #                       list(
-    #                         type = "buttons",
-    #                         y = 0.8,
-    #                         buttons = list(
-    #                           
-    #                           list(method = "restyle",
-    #                                args = list("line.color", "blue"),
-    #                                label = "Blue"),
-    #                           
-    #                           list(method = "restyle",
-    #                                args = list("line.color", "red"),
-    #                                label = "Red")))
-    #                     ))
                         
-    p2
   })
   
 
