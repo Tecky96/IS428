@@ -170,10 +170,11 @@ server <- function(input, output) {
     LineBar1 <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
     names(LineBar)[1] <- "Year"
     ggplot(LineBar)  + 
-      geom_bar(aes(x=Year, y=`Unit Area (PSF)`), size=1,stat="identity", fill="tan1", colour="sienna3")+
-      geom_line(aes(x=Year, y=Sales), size=1.5 , color="green", stat="identity")+
-      geom_point(aes(x=Year, y=Sales),size=3, colour="green")+
+      geom_bar(aes(x=Year, y=`Unit Area (PSF)`), size=1,stat="identity", fill="#33CCCC", colour="#33CCCC")+
+      geom_line(aes(x=Year, y=Sales), size=1.5 , color="#CC6666", stat="identity")+
+      geom_point(aes(x=Year, y=Sales),size=3, colour="#660000")+
       scale_y_continuous(sec.axis = sec_axis(~./3, name = "No. of Transactions"))+
+      scale_x_continuous()+
       geom_text(aes(label=sprintf("%0.2f", round(Sales, digits = 2)), x=Year, y=Sales), colour="white", check_overlap = TRUE)
   })
   
@@ -182,6 +183,8 @@ server <- function(input, output) {
     names(xplot)[1] <- "Flat_Type"
     names(xplot)[2] <- "Year"
     xyplot(`Unit Area (PSF)` ~ Year |Flat_Type, data = xplot, type = "l", pch=19, layout=c(4,2),
+           strip = strip.custom(bg="lightgrey",
+           par.strip.text=list(col="black", cex=.8, font=3)),
            main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
   })
   
