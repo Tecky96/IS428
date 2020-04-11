@@ -66,9 +66,9 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            box(radioButtons("Plot", "Choose the visualisation to see:",
-                             c("Resale Price" = "Average Resale Price",
-                               "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
+            # box(radioButtons("Plot", "Choose the visualisation to see:",
+            #                  c("Resale Price" = "Average Resale Price",
+            #                    "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
             #plotOutput("Overview1", height="400px", width="100%"),
             plotlyOutput("LB"),
             plotOutput("Overview2", height="450px", width="100%")
@@ -92,18 +92,22 @@ body <- dashboardBody(
             box(selectInput(inputId = "variable1","Please select a floor level type",
                         unique(select_data$Storey_Level),
                         selected = NULL, multiple = FALSE)),
-            #box(width="100%", height="100%",
-                plotOutput("distPlot", height="700px", width="100%")
+            plotOutput("distPlot", hover="info", height="700px", width="100%")
     ),
-tabItem(tabName = "D3_2",
+
+    tabItem(tabName = "D3_2",
         h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-        box(selectInput(inputId = "variable", "Please select a year",
-                                           unique(select_data$Year),
-                                           selected = 2012, multiple = FALSE)),
-        box(selectInput(inputId = "variable1","Please select a floor level type",
-                                           unique(select_data$Storey_Level),
-                                           selected = NULL, multiple = FALSE)),
-        box(width="100%", plotOutput("ScatterHist", height="600px", width="90%"))
+        # box(selectInput(inputId = "variable", "Please select a year",
+        #                                    unique(select_data$Year),
+        #                                    selected = 2012, multiple = FALSE)),
+        # box(selectInput(inputId = "variable1","Please select a floor level type",
+        #                                    unique(select_data$Storey_Level),
+        #                                    selected = NULL, multiple = FALSE)),
+        #box(width="100%", plotOutput("ScatterHist", height="600px", width="90%"))
+        
+        selectizeInput("year", "Select your year", unique(Overview_scatter$Year), multiple = FALSE),
+        selectizeInput("HDB", "Select your HDB Town", unique(Overview_scatter$`HDB Town`), multiple = FALSE),
+        plotlyOutput("ScatterHist", height="700px")
 ),
 
 #-------------------------------DATASET TAB------------------------------#
@@ -145,6 +149,35 @@ server <- function(input, output) {
          <li>Identify the most expensive streets within each Town area given the floor </li></ul>")
   })
   
+
+  #-------------------------------DASHBOARD 1------------------------------#
+  
+  output$LB <- renderPlotly({
+    Overview %>%
+      group_by(Year) %>%
+      summarize(Unit_Area = mean(`Average Resale Price`), Sale = sum(Sales)) %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('darkolivegreen1'), name = "Unit Area (PSF)") %>%
+      add_trace(x = ~Year, y = ~Unit_Area, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
+      layout(title = "Overview of Resale",
+             xaxis = list(title = "Year"),
+             yaxis = list(side = 'left', title = "Sales Volume"),
+             yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))
+  })
+  
+  output$Overview2 <- renderPlot({
+    xplot_data <- Overview %>%
+      group_by(Year, Flat_Type) %>%
+      summarize(Avg_Resale_Price = mean(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
+    
+    xyplot(Unit_Area ~ Year |Flat_Type, data = xplot_data,type = "l", pch=19, layout=c(4,2),
+           strip = strip.custom(bg="lightgrey",
+                                par.strip.text=list(col="black", cex=.8, font=3)),
+           main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
+    
+  })
+  
+  #-------------------------------DASHBOARD 2------------------------------#
+  
   output$Treemap <- renderPlot({
   realis_grouped <- group_by(realis,
                              `Year`,
@@ -175,59 +208,52 @@ server <- function(input, output) {
                   rownames = FALSE)
   })
   
-  output$ScatterHist <- renderPlot({
- 
-    Scatter <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$resale_price), mean)
-    names(Scatter)[1] <- "resale_price"
-    `Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
-    `Resale Price` <- Scatter$resale_price
-    `Remaining Lease Years` <- Scatter $remaining_lease
-    p1 <- ggplot(Scatter,
-                 aes(y = `Resale Price`, x = `Remaining Lease Years`)) +
-                 geom_point(aes(y = `Resale Price`, x = `Remaining Lease Years`,color = `Unit Price (PSF)`))
-    p3 <- ggMarginal(p1, type="boxplot")
-    p3
+  
+  #-------------------------------DASHBOARD 3------------------------------#
+  
+  output$ScatterHist <- renderPlotly({
     
+    
+    Scatter <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$year, Overview_scatter$resale_price), mean)
+    names(Scatter)[1] <- "resale_price"
+    #`Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
+    `Resale Price` <- Scatter$resale_price
+    `Remaining Lease Years` <- Scatter$remaining_lease
+    Scatter <- Scatter[Scatter$year == input$year,]
+    
+    p1 <- subplot(plot_ly(type='box', color=I("indianred2")) %>%
+                    add_boxplot(data=Scatter, x=~`Remaining Lease Years`),
+                  plotly_empty(), 
+                  plot_ly(data=Scatter, x=~`Remaining Lease Years`, y=~`Resale Price`, color=I("deepskyblue3")),
+                  plot_ly(type='box', color=I("lightseagreen")) %>%
+                    add_boxplot(data=Scatter, y=~`Resale Price`),
+                  nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
+                  shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
+    p1
+    
+    # p2 <- p1 %>% layout(showlegend = FALSE,
+    #                     title = "Button Restyle",
+    #                     xaxis = list(domain = c(0.1, 1)),
+    #                     yaxis = list(title = "y"),
+    #                     updatemenus = list(
+    #                       list(
+    #                         type = "buttons",
+    #                         y = 0.8,
+    #                         buttons = list(
+    #                           
+    #                           list(method = "restyle",
+    #                                args = list("line.color", "blue"),
+    #                                label = "Blue"),
+    #                           
+    #                           list(method = "restyle",
+    #                                args = list("line.color", "red"),
+    #                                label = "Red")))
+    #                     ))
+                        
+    p2
   })
   
 
-  #can remove this
-  output$Overview1 <- renderPlot({
-    LineBar <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
-    LineBar1 <- aggregate(Overview[,c(3,4,5,6,8,9)], list(Overview$`Year`), mean)
-    names(LineBar)[1] <- "Year"
-    ggplot(LineBar)  + 
-      geom_bar(aes(x=Year, y=`Unit Area (PSF)`), size=1,stat="identity", fill="#33CCCC", colour="#33CCCC")+
-      geom_line(aes(x=Year, y=Sales), size=1.5 , color="#CC6666", stat="identity")+
-      geom_point(aes(x=Year, y=Sales),size=3, colour="#660000")+
-      scale_y_continuous(sec.axis = sec_axis(~./3, name = "No. of Transactions"))+
-      scale_x_continuous()+
-      geom_text(aes(label=sprintf("%0.2f", round(Sales, digits = 2)), x=Year, y=Sales), colour="white", check_overlap = TRUE)
-  })
-  
-  output$LB <- renderPlotly({
-    Overview %>%
-      group_by(Year) %>%
-      summarize(Unit_Area = mean(`Average Resale Price`), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('darkolivegreen1'), name = "Unit Area (PSF)") %>%
-      add_trace(x = ~Year, y = ~Unit_Area, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
-      layout(title = "Overview of Resale",
-             xaxis = list(title = "Year"),
-             yaxis = list(side = 'left', title = "Sales Volume"),
-             yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))
-  })
-  
-  output$Overview2 <- renderPlot({
-    xplot_data <- Overview %>%
-      group_by(Year, Flat_Type) %>%
-      summarize(Avg_Resale_Price = mean(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
-    
-    xyplot(Unit_Area ~ Year |Flat_Type, data = xplot_data,type = "l", pch=19, layout=c(4,2),
-           strip = strip.custom(bg="lightgrey",
-           par.strip.text=list(col="black", cex=.8, font=3)),
-           main = "Room Type Resale Trends", ylab = "Average Resale Price", xlab = "Year")
-  })
-  
   
   output$distPlot <- renderPlot({ 
     map <- filter(select_data, Year == input$variable, Storey_Level == input$variable1)

@@ -7,12 +7,19 @@ for(p in packages){library
   }
   library(p, character.only = T)
 }
+
+import plotly.express as px
+print(px.data.iris.__doc__)
+px.data.iris().head()
+
+
 install_github("hafen/geofacet")
 install_github("shiny", "rstudio")
 install_github('hadley/ggplot2')
 
 Overview_scatter <- read_csv("data/Overview2.csv")
 head(Overview_scatter)
+view(Overview_scatter)
 select_data <- read_csv('data/Map.csv')
 head(select_data)
 
