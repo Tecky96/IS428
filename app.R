@@ -45,12 +45,8 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Introduction", tabName = "Overview", icon = icon("dashboard")),
     menuItem("Overview", tabName = "dashboard1", icon = icon("dashboard")),
-    conditionalPanel("input.sidebarmenu == 'dashboard1'",
-                     selectInput("inputTest", "Input Test",
-                                 choices = c("a", "b", "c", "d"), multiple=TRUE, selectize=TRUE,
-                                 width = '98%')),
     menuItem("Segregated Pricings", tabName = "dashboard2", icon = icon("dashboard")),
-    menuItem("Dashboard 3", tabName = "dashboard3", icon = icon("dashboard"),
+    menuItem("HDB Town", tabName = "dashboard3", icon = icon("dashboard"),
              menuSubItem("GeoFacet", tabName = "D3_1"), 
              menuSubItem("Scatterplot", tabName="D3_2")
              ),
@@ -89,8 +85,6 @@ body <- dashboardBody(
             conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("LB1")),
             conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("Trellis")),
             conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("Trellis1"))
-            # plotlyOutput("LB"),
-            #plotlyOutput("Overview2", height="450px", width="100%")
     ),
 
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
@@ -210,7 +204,6 @@ server <- function(input, output) {
   })
   
   output$Trellis <- renderPlotly({
-    view(Overview)
     xplot_data <- Overview %>%
       group_by(Year, Flat_Type) %>%
       summarize(Avg_Resale_Price = median(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
