@@ -28,7 +28,6 @@ library(geofacet)
 realis <- read_csv("data/TreeMap.csv")
 Overview <- read_csv("data/Overview1.csv")
 Overview_scatter <- read_csv("data/Overview2.csv")
-
 select_data <- read_csv('data/Map.csv')
 select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
 
@@ -46,6 +45,10 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     menuItem("Introduction", tabName = "Overview", icon = icon("dashboard")),
     menuItem("Overview", tabName = "dashboard1", icon = icon("dashboard")),
+    conditionalPanel("input.sidebarmenu == 'dashboard1'",
+                     selectInput("inputTest", "Input Test",
+                                 choices = c("a", "b", "c", "d"), multiple=TRUE, selectize=TRUE,
+                                 width = '98%')),
     menuItem("Segregated Pricings", tabName = "dashboard2", icon = icon("dashboard")),
     menuItem("Dashboard 3", tabName = "dashboard3", icon = icon("dashboard"),
              menuSubItem("GeoFacet", tabName = "D3_1"), 
@@ -55,7 +58,9 @@ sidebar <- dashboardSidebar(
              menuSubItem("Tree Map Dataset", tabName = "sub_1"), 
              menuSubItem("Map Dataset", tabName = "sub_2"),
              menuSubItem("Overview Dataset", tabName = "sub_3"))
-))
+    )
+)
+
 #-------------------------------OVERVIEW DASHBOARD------------------------------#
 body <- dashboardBody(
   tabItems(
@@ -76,21 +81,29 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            # box(radioButtons("Plot", "Choose the visualisation to see:",
-            #                  c("Resale Price" = "Average Resale Price",
-            #                    "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
-            #plotOutput("Overview1", height="400px", width="100%"),
-            plotlyOutput("LB"),
-            plotlyOutput("Overview2", height="450px", width="100%")
+            fluidRow(column(2, radioButtons("OverviewPlot", "Choose your plot",
+                                            c("Resale Price" = "Resale",
+                                              "Unit Price" = "Unit"),
+                                            selected="Resale"))), 
+            conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("LB")),
+            conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("LB1")),
+            conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("Trellis")),
+            conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("Trellis1"))
+            # plotlyOutput("LB"),
+            #plotlyOutput("Overview2", height="450px", width="100%")
     ),
 
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     tabItem(tabName = "dashboard2",
             h1("HDB Floor Categories vs. Pricing", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            box(selectInput("Year", "Select Year:", unique(realis$`Year`), selected = 2020, multiple = FALSE)),
-            box(radioButtons("Plot", "Choose the visualisation to see:",
+            fluidRow(column(2, selectInput("Year", "Select Year:", 
+                                           unique(realis$`Year`), 
+                                           selected = 2020, 
+                                           multiple = FALSE)),
+                     column(2, radioButtons("Plot", "Choose the visualisation to see:",
                              c("Resale Price" = "Average Resale Price",
-                               "Unit Price" = "Unit Price (PSF)"), selected = "Average Resale Price")),
+                               "Unit Price" = "Unit Price (PSF)"), 
+                             selected = "Average Resale Price"))),
             plotOutput("Treemap",height="600px", width="100%")
     ),
 
@@ -108,6 +121,7 @@ body <- dashboardBody(
 
     tabItem(tabName = "D3_2",
         h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
+        
         # box(selectInput(inputId = "variable", "Please select a year",
         #                                    unique(select_data$Year),
         #                                    selected = 2012, multiple = FALSE)),
@@ -116,8 +130,13 @@ body <- dashboardBody(
         #                                    selected = NULL, multiple = FALSE)),
         #box(width="100%", plotOutput("ScatterHist", height="600px", width="90%"))
         
-        selectizeInput("scatteryear", "Select your year", unique(Overview_scatter$Year), multiple = FALSE),
-        selectizeInput("HDB", "Select your HDB Town", unique(Overview_scatter$`HDB Town`), multiple = FALSE),
+        selectizeInput("scatteryear", "Select your year", 
+                       unique(Overview_scatter$Year),
+                       multiple = FALSE),
+        selectizeInput("HDB", "Select your HDB Town", 
+                       unique(Overview_scatter$`HDB Town`), 
+                       multiple = FALSE),
+        
         plotlyOutput("ScatterHist", height="700px")
 ),
 
@@ -160,6 +179,9 @@ server <- function(input, output) {
          <li>Identify the most expensive streets within each Town area given the floor </li></ul>")
   })
   
+#---testing----#
+  
+
   
 #---------------------------------------------Dashboard 1---------------------------------------------------#
   
@@ -175,18 +197,46 @@ server <- function(input, output) {
              yaxis2 = list(side = 'right', overlaying ="y", title = 'Median Resale Price'))
   })
   
-  output$Overview2 <- renderPlotly({
+  output$LB1 <- renderPlotly({
+    Overview %>%
+      group_by(Year) %>%
+      summarize(Price = median(`Median Resale Price`)/(median(`Area (SQM)`)*10.7639), Sale = sum(Sales)) %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('darkolivegreen1'), name = "Unit Area (PSF)") %>%
+      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
+      layout(title = "Overview of Resale",
+             xaxis = list(title = "Year"),
+             yaxis = list(side = 'left', title = "Sales Volume"),
+             yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))
+  })
+  
+  output$Trellis <- renderPlotly({
+    view(Overview)
     xplot_data <- Overview %>%
       group_by(Year, Flat_Type) %>%
       summarize(Avg_Resale_Price = median(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
     p <- ggplot(xplot_data,
-                aes(x=Year, y=Unit_Area, colour=Flat_Type)) +
+                aes(x=Year, y=Avg_Resale_Price, colour=Flat_Type)) +
                 geom_line(stat="identity", show.legend=TRUE) +
       theme(legend.position="right")+
       facet_wrap(~Flat_Type)
       labs(y = "Resale Price",
            x = "Year",
-           title = "Year Vs Resale Price")
+           title = "Year Vs Median Resale Price")
+    ggplotly(p)
+  })
+  
+  output$Trellis1 <- renderPlotly({
+    xplot_data <- Overview %>%
+      group_by(Year, Flat_Type) %>%
+      summarize(Avg_Resale_Price = median(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
+    p <- ggplot(xplot_data,
+                aes(x=Year, y=Unit_Area, colour=Flat_Type)) +
+      geom_line(stat="identity", show.legend=TRUE) +
+      theme(legend.position="right")+
+      facet_wrap(~Flat_Type)
+    labs(y = "Resale Price",
+         x = "Year",
+         title = "Year Vs Unit Area (PSF)")
     ggplotly(p)
   })
   
