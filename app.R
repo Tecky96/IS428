@@ -66,8 +66,7 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   tabItems(
     tabItem(tabName = "Overview",
-            HTML('<center><img src="cheatsheet.jpg", height="300px" style="float:center"></center>'),
-            h1("Problem"),
+            div(tags$img(src='Cheatsheet.jpg', height=300, width=400, align="center"), style="text-align: center;"),
             span(uiOutput("problem"),style="font-family: Tahoma; font-size: 18px;
                  color:grey;"),
             h1("Motivation"),
@@ -212,6 +211,10 @@ server <- function(input, output) {
          <li>Identify the most expensive town given the flat type category</li></ul>")
   
     })
+#--------------------image-----------------------#
+  output$image <- renderUI({
+    tags$img(src = "WeHouse_Logo.jpg", width=400, height=300)
+  })
   
 #---------------------------------------------Dashboard 1---------------------------------------------------#
   output$LB <- renderPlotly({
