@@ -206,10 +206,10 @@ server <- function(input, output) {
     
     HTML("In this project, we aim to deliver a focused and compact visualisation to allow Singaporeans to be well-informed of the average HDBs resale prices around their desired location.
          <ul>
-         <li>Overall change in HDB price trends over time by each planning region and by HDB Town</li>
-         <li>Comparing price differences for each HDB Town area and planning region given the remaining lease of the HDB flat</li>
-         <li>Determine which month had the highest or lowest resale price sold and number of transactions</li>
-         <li>Identify the most expensive streets within each Town area given the floor </li></ul>")
+         <li>Comparing and identifying the change in median per unit price trends of resale HDB Town across different months within the selected year and floor level</li>
+         <li>Comparing the prices of the resale flats within individual HDB Town area based on their remaining lease year of the HDB flat</li>
+         <li>Determine which year had the highest or lowest resale price sold and number of transactions</li>
+         <li>Identify the most expensive town given the flat type category</li></ul>")
   
     })
   
