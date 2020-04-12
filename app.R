@@ -90,17 +90,26 @@ body <- dashboardBody(
 
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     tabItem(tabName = "dashboard2",
-            h1("HDB Floor Categories vs. Pricing", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            fluidRow(column(2, selectInput("Year", "Select Year:", 
-                                           unique(realis$`Year`), 
-                                           selected = 2020, 
-                                           multiple = FALSE)),
-                     column(2, radioButtons("Plot", "Choose the visualisation to see:",
-                             c("Resale Price" = "Average Resale Price",
-                               "Unit Price" = "Unit Price (PSF)"), 
-                             selected = "Average Resale Price"))),
-            conditionalPanel('input.Plot=="Average Resale Price"', plotOutput("Treemap")),
-            conditionalPanel('input.Plot=="Unit Price (PSF)"', plotOutput("Treemap1"))
+            fluidRow(column(12,h1("HDB Floor Categories vs. Pricing", align = "center", style="font-family: Tahoma; font-size: 24px;")),
+                     sidebarPanel(sliderInput(
+                                           inputId = "Year", 
+                                           label = "Select Year:", 
+                                           min = min(unique(realis$`Year`)),
+                                           max = max(unique(realis$`Year`)), 
+                                           value = 2020, 
+                                           sep = "",
+                                           animate = animationOptions(loop = TRUE)),
+                                  radioButtons("Plot", "Choose the visualisation to see:",
+                                               c("Resale Price" = "Average Resale Price",
+                                                 "Unit Price" = "Unit Price (PSF)"), 
+                                               selected = "Average Resale Price")
+                                ,width=2),
+                     column(10,conditionalPanel('input.Plot=="Average Resale Price"', plotOutput("Treemap", height="700px"))),
+                     column(10,conditionalPanel('input.Plot=="Unit Price (PSF)"', plotOutput("Treemap1", height="700px"))))
+                     # column(2, radioButtons("Plot", "Choose the visualisation to see:",
+                     #         c("Resale Price" = "Average Resale Price",
+                     #           "Unit Price" = "Unit Price (PSF)"), 
+                     #         selected = "Average Resale Price"),"topleft")
     ),
 
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
@@ -119,7 +128,8 @@ body <- dashboardBody(
         h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
         fluidRow(column(2, selectizeInput("scatteryear", "Select your year", 
                        unique(Overview_scatter$Year),
-                       multiple = FALSE
+                       multiple = FALSE,
+                       selected = 2016
                        )),
                  column(2, selectizeInput("HDB", "Select your HDB Town", 
                        unique(Overview_scatter$`HDB Town`), 
@@ -294,35 +304,31 @@ server <- function(input, output) {
     `Remaining Lease Years` <- Scatter_data$remaining_lease
     
     `Year` <- Scatter_data$Year
-    Scatter <- Scatter_data
+    test <- filter(Scatter_data, Year == input$scatteryear)
     
     
-    # if (!input$scatteryear){
-    test <- filter(Scatter_data, Scatter_data$Year == input$scatteryear)
-    p1 <- subplot(plot_ly(type='box', color=I("indianred2")) %>%
-                    add_boxplot(test, x=~`Remaining Lease Years`),
-                  plotly_empty(), 
-                  plot_ly(test, x=~`Remaining Lease Years`, y=~`Resale Price`, color=I("deepskyblue3")),
-                  plot_ly(type='box', color=I("lightseagreen")) %>%
-                    add_boxplot(test, y=~`Resale Price`),
+    p1 <- subplot(plot_ly(type='box', 
+                          color=I("indianred2"),
+                          name="Remaining Lease Years") %>%
+                    add_boxplot(test, type='box',
+                                x=~`Remaining Lease Years`),
+                  plotly_empty(type = "scatter"), 
+                  plot_ly(test,
+                          type="scatter",
+                          x=~`Remaining Lease Years`, 
+                          y=~`Resale Price`, 
+                          mode   = 'markers',
+                          name = "Resale Price vs Remaining Lease Years",
+                          color=I("deepskyblue3")),
+                  plot_ly(type='box', 
+                          color=I("lightseagreen"),
+                          name="Resale Price") %>%
+                    add_boxplot(test, type='box',
+                                y=~`Resale Price`),
                   nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
                   shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
     
     p1
-    # }else{
-    #   test <- filter(Scatter_data$Year == input$scatteryear)
-    # p1 <- subplot(plot_ly(type='box', color=I("indianred2")) %>%
-    #                 add_boxplot(test, x=~`Remaining Lease Years`),
-    #               plotly_empty(), 
-    #               plot_ly(test, x=~`Remaining Lease Years`, y=~`Resale Price`, color=I("deepskyblue3")),
-    #               plot_ly(type='box', color=I("lightseagreen")) %>%
-    #                 add_boxplot(test, y=~`Resale Price`),
-    #               nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
-    #               shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
-    # 
-    # p1
-    # }
-    # 
                         
   })
   
