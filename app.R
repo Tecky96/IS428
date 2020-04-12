@@ -16,6 +16,7 @@ library(ggplot2)
 library(ggExtra)
 library(lattice)
 library(geofacet)
+library(plotly)
 
 # for(p in packages){library
 #   if(!require(p, character.only = T)){
@@ -98,7 +99,8 @@ body <- dashboardBody(
                              c("Resale Price" = "Average Resale Price",
                                "Unit Price" = "Unit Price (PSF)"), 
                              selected = "Average Resale Price"))),
-            plotOutput("Treemap",height="600px", width="100%")
+            conditionalPanel('input.Plot=="Average Resale Price"', plotOutput("Treemap")),
+            conditionalPanel('input.Plot=="Unit Price (PSF)"', plotOutput("Treemap1"))
     ),
 
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
@@ -115,22 +117,13 @@ body <- dashboardBody(
 
     tabItem(tabName = "D3_2",
         h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-        
-        # box(selectInput(inputId = "variable", "Please select a year",
-        #                                    unique(select_data$Year),
-        #                                    selected = 2012, multiple = FALSE)),
-        # box(selectInput(inputId = "variable1","Please select a floor level type",
-        #                                    unique(select_data$Storey_Level),
-        #                                    selected = NULL, multiple = FALSE)),
-        #box(width="100%", plotOutput("ScatterHist", height="600px", width="90%"))
-        
-        selectizeInput("scatteryear", "Select your year", 
+        fluidRow(column(2, selectizeInput("scatteryear", "Select your year", 
                        unique(Overview_scatter$Year),
-                       multiple = FALSE),
-        selectizeInput("HDB", "Select your HDB Town", 
+                       multiple = FALSE
+                       )),
+                 column(2, selectizeInput("HDB", "Select your HDB Town", 
                        unique(Overview_scatter$`HDB Town`), 
-                       multiple = FALSE),
-        
+                       multiple = FALSE))),
         plotlyOutput("ScatterHist", height="700px")
 ),
 
@@ -178,7 +171,6 @@ server <- function(input, output) {
 
   
 #---------------------------------------------Dashboard 1---------------------------------------------------#
-  
   output$LB <- renderPlotly({
     Overview %>%
       group_by(Year) %>%
@@ -187,7 +179,7 @@ server <- function(input, output) {
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
-             yaxis = list(side = 'left', title = "Sales Volume"),
+             yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
              yaxis2 = list(side = 'right', overlaying ="y", title = 'Median Resale Price'))
   })
   
@@ -199,7 +191,7 @@ server <- function(input, output) {
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
-             yaxis = list(side = 'left', title = "Sales Volume"),
+             yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
              yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))
   })
   
@@ -234,29 +226,52 @@ server <- function(input, output) {
   })
   
   #---------------------------------------------Dashboard 2---------------------------------------------------#
-  
   output$Treemap <- renderPlot({
-  realis_grouped <- group_by(realis,
-                             `Year`,
-                             `Planning Region`, `HDB Town`,
-                             Storey_Level)
+    realis_grouped <- group_by(realis,
+                               `Year`,
+                               `Planning Region`, `HDB Town`,
+                               Storey_Level)
+    
+    realis_summarised <- summarise(realis_grouped, 
+                                   `Total Unit Sold` = sum(Sales, na.rm = TRUE),
+                                   `Total Area` = sum(`Area (SQM)`, na.rm = TRUE),
+                                   `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
+                                   `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
+    treemapdata <- filter(realis_summarised, `Year` == input$Year)
+    .tm <<- 
+      treemap(treemapdata,
+              index=c("Planning Region", "HDB Town", "Storey_Level"),
+              vSize="Total Unit Sold",
+              vColor=input$Plot,
+              type="manual",
+              palette="Blues",
+              title="Average Resale HDB Prices by Planning Region and Town",
+              title.legend = "Average Resale Price"
+      )
+  })
   
-  realis_summarised <- summarise(realis_grouped, 
-                                 `Total Unit Sold` = sum(Sales, na.rm = TRUE),
-                                 `Total Area` = sum(`Area (SQM)`, na.rm = TRUE),
-                                 `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
-                                 `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
-  treemapdata <- filter(realis_summarised, `Year` == input$Year)
-  .tm <<- 
-    treemap(treemapdata,
-            index=c("Planning Region", "HDB Town", "Storey_Level"),
-            vSize="Total Unit Sold",
-            vColor=input$Plot,
-            type="manual",
-            palette="Blues",
-            title="Resale HDB Prices by Planning Region and Town",
-            title.legend = "Average Resale Price(S$ Per Sq. ft)"
-    )
+  output$Treemap1 <- renderPlot({
+    realis_grouped <- group_by(realis,
+                               `Year`,
+                               `Planning Region`, `HDB Town`,
+                               Storey_Level)
+    
+    realis_summarised <- summarise(realis_grouped, 
+                                   `Total Unit Sold` = sum(Sales, na.rm = TRUE),
+                                   `Total Area` = sum(`Area (SQM)`, na.rm = TRUE),
+                                   `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
+                                   `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
+    treemapdata <- filter(realis_summarised, `Year` == input$Year)
+    .tm <<- 
+      treemap(treemapdata,
+              index=c("Planning Region", "HDB Town", "Storey_Level"),
+              vSize="Total Unit Sold",
+              vColor=input$Plot,
+              type="manual",
+              palette="Blues",
+              title="Unit Prices by Planning Region and Town",
+              title.legend = "Unit Prices(S$ Per Sq. ft)"
+      )
   })
   
   output$TreemapTable <- DT::renderDataTable({
@@ -277,9 +292,13 @@ server <- function(input, output) {
     #`Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
     `Resale Price` <- Scatter_data$resale_price
     `Remaining Lease Years` <- Scatter_data$remaining_lease
+    
     `Year` <- Scatter_data$Year
     Scatter <- Scatter_data
-    test <- filter(Scatter, `Year` == input$scatteryear)
+    
+    
+    # if (!input$scatteryear){
+    test <- filter(Scatter_data, Scatter_data$Year == input$scatteryear)
     p1 <- subplot(plot_ly(type='box', color=I("indianred2")) %>%
                     add_boxplot(test, x=~`Remaining Lease Years`),
                   plotly_empty(), 
@@ -288,6 +307,22 @@ server <- function(input, output) {
                     add_boxplot(test, y=~`Resale Price`),
                   nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
                   shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
+    
+    p1
+    # }else{
+    #   test <- filter(Scatter_data$Year == input$scatteryear)
+    # p1 <- subplot(plot_ly(type='box', color=I("indianred2")) %>%
+    #                 add_boxplot(test, x=~`Remaining Lease Years`),
+    #               plotly_empty(), 
+    #               plot_ly(test, x=~`Remaining Lease Years`, y=~`Resale Price`, color=I("deepskyblue3")),
+    #               plot_ly(type='box', color=I("lightseagreen")) %>%
+    #                 add_boxplot(test, y=~`Resale Price`),
+    #               nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
+    #               shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
+    # 
+    # p1
+    # }
+    # 
                         
   })
   
