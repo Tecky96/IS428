@@ -29,14 +29,12 @@ for(p in packages){library
 #-------------------------------Datasets------------------------------#
 
 Overview <- read_csv("data/Overview1.csv")
-
 realis <- read_csv("data/TreeMap.csv")
-
 select_data <- read_csv('data/Map.csv')
 select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
 Overview_scatter <- read_csv("data/Scatter.csv")
 
-logo <- img(src="weHouse_logo.png", width=220, height=75, align = "centre")
+logo <- img(src="WeHouse_Logo.png", width=150, height=75, align = "centre")
 
 
 #-------------------------------HEADER DASHBOARD TITLE------------------------------#
@@ -56,9 +54,10 @@ sidebar <- dashboardSidebar(
              menuSubItem("Scatterplot", tabName="D3_2")
              ),
     menuItem("Dataset", tabName = "Datasets", icon = icon("fas fa-database"),
-             menuSubItem("Tree Map Dataset", tabName = "sub_1"), 
-             menuSubItem("Map Dataset", tabName = "sub_2"),
-             menuSubItem("Overview Dataset", tabName = "sub_3"))
+             menuSubItem("Overview Dataset", tabName = "sub_1"), 
+             menuSubItem("Treemap Dataset", tabName = "sub_2"),
+             menuSubItem("Geofacet Dataset", tabName = "sub_3"),
+             menuSubItem("Scatter Dataset", tabName = "sub_4"))
     )
 )
 
@@ -67,7 +66,7 @@ sidebar <- dashboardSidebar(
 body <- dashboardBody(
   tabItems(
     tabItem(tabName = "Overview",
-            HTML('<center><img src="cheatsheet.jpg", height=400, width=600></center>'),
+            HTML('<center><img src="cheatsheet.jpg", height="300px" style="float:center"></center>'),
             h1("Problem"),
             span(uiOutput("problem"),style="font-family: Tahoma; font-size: 18px;
                  color:grey;"),
@@ -163,14 +162,20 @@ body <- dashboardBody(
 
 #-------------------------------DATASET TAB------------------------------#
     tabItem(tabName = "sub_1",
+            h1("Overview Dataset", align = "center"),
+            DT::dataTableOutput(outputId = "Overview")
+    ),
+    tabItem(tabName = "sub_2",
             h1("Treemap Dataset", align = "center"),
             DT::dataTableOutput(outputId = "TreemapTable")
     ),
-    tabItem(tabName = "sub_2",
-            h1("Map Dataset", align = "center")
-    ),
     tabItem(tabName = "sub_3",
-            h1("Overview Dataset", align = "center")
+            h1("Geofacet Dataset", align = "center"),
+            DT::dataTableOutput(outputId = "Geofacet")
+    ),
+    tabItem(tabName = "sub_4",
+        h1("Scatter Dataset", align = "center"),
+        DT::dataTableOutput(outputId = "Scatter")
     )
 
 ))
@@ -214,7 +219,7 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Median Resale Price`), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}<extra></extra>') %>%
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Median Resale Price", yaxis='y2', 
                 hovertemplate = '<b>Year</b>: %{x}<br><b>Median Resale Price</b>: %{y:$.0f}<extra></extra>') %>%
       layout(title = "Overview of HDB Resale Median Price and Volume",
@@ -339,9 +344,29 @@ server <- function(input, output) {
               title.legend = "Unit Prices(S$ Per Sq. ft)"
       )
   })
-  
+  Overview <- read_csv("data/Overview1.csv")
+  realis <- read_csv("data/TreeMap.csv")
+  select_data <- read_csv('data/Map.csv')
+  select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
+  Overview_scatter <- read_csv("data/Scatter.csv")
+#--------------------------Datasets------------------------------------------#  
+  output$Overview <- DT::renderDataTable({
+    DT::datatable(data = Overview %>% select(1:8),
+                  options = list(pageLength = 25),
+                  rownames = FALSE)
+  })
   output$TreemapTable <- DT::renderDataTable({
-    DT::datatable(data = realis_summarised %>% select(1:8),
+    DT::datatable(data = realis %>% select(1:9),
+                  options = list(pageLength = 25),
+                  rownames = FALSE)
+  })
+  output$Geofacet <- DT::renderDataTable({
+    DT::datatable(data = select_data %>% select(1:18),
+                  options = list(pageLength = 25),
+                  rownames = FALSE)
+  })
+  output$Scatter <- DT::renderDataTable({
+    DT::datatable(data = Overview_scatter %>% select(1:14),
                   options = list(pageLength = 25),
                   rownames = FALSE)
   })
@@ -410,13 +435,13 @@ server <- function(input, output) {
       facet_geo(~ Code, grid= select_data1, label = "name") +
       scale_x_discrete(guide = guide_axis(n.dodge =2))+
       scale_x_continuous(breaks = c(1,3,5,7,9,11))+
-      labs(x = "Year\n\n\n",
+      labs(x = "January to December\n\n\n",
            y ="Median Unit Price\n\n\n") +
       ggtitle("Resale HDB Market Trend by HDB Town")+
       theme(plot.title = element_text(hjust = 0.5))+
       scale_y_continuous(labels = function(x) format(x, big.mark = ",",
                                                      scientific = FALSE)) +
-      theme(plot.title = element_text(color = "black",size = 30, face = "bold.italic"),
+      theme(plot.title = element_text(color = "black",size = 20, face = "bold.italic"),
             axis.title.x = element_text(color = "black", size = 15, face ="bold"),
             axis.title.y = element_text(color = "black", size = 15, face = "bold"),
             strip.background = element_rect((fill = "#2E8B57")),

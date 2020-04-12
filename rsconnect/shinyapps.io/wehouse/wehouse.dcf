@@ -5,9 +5,9 @@ account: wehouse
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1995206
-bundleId: 3002954
+bundleId: 3003506
 url: https://wehouse.shinyapps.io/wehouse/
-when: 1586694347.03654
+when: 1586707647.0371
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: .RData|www/bootstrap.css
