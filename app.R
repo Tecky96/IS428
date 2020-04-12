@@ -59,6 +59,7 @@ sidebar <- dashboardSidebar(
 )
 
 #-------------------------------OVERVIEW DASHBOARD------------------------------#
+
 body <- dashboardBody(
   tabItems(
     tabItem(tabName = "Overview",
@@ -78,14 +79,14 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             fluidRow(column(12,h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;")),
-                     sidebarPanel(radioButtons("OverviewPlot", "Choose your plot",
+                     column(1, radioButtons("OverviewPlot", "Choose your plot",
                                                c("Resale Price" = "Resale",
                                                  "Unit Price" = "Unit"),
-                                               selected="Resale"),width=2)),
-                     column(10,conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("LB"))), 
-                     column(10,conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("LB1"))),
-                     column(12,conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("Trellis"))),
-                     column(12,conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("Trellis1")))
+                                               selected="Resale")),
+                     column(11,conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("LB"))), 
+                     column(11,conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("LB1"))),
+                     column(11,conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("Trellis")), offset = 1),
+                     column(11,conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("Trellis1")), offset = 1))
                      
     ),
 
@@ -114,9 +115,14 @@ body <- dashboardBody(
     tabItem(tabName = "D3_1",
             fluidRow(
               column(12, h1("GeoFacet of HDB AREA vs Price", align = "center", style="font-family: Tahoma; font-size: 24px;")),
-            sidebarPanel(selectInput(inputId = "variable", "Please select a year",
-                                     unique(select_data$Year),
-                                     selected = 2012, multiple = FALSE),
+            sidebarPanel(sliderInput(inputId = "variable", 
+                                     label = "Please select a year",
+                                     min = min(unique(select_data$Year)),
+                                     max = max(unique(select_data$Year)), 
+                                     value = 2012, 
+                                     sep = "",
+                                     animate = animationOptions(loop = TRUE)),
+                        
                          selectInput(inputId = "variable1","Please select a floor level type",
                                      unique(select_data$Storey_Level),
                                      selected = NULL, multiple = FALSE),
@@ -125,8 +131,8 @@ body <- dashboardBody(
     )),
 
     tabItem(tabName = "D3_2",
-        h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-        fluidRow(column(2, selectizeInput("scatteryear", "Select your year", 
+        fluidRow(column(12,h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;")),
+                 column(2, selectizeInput("scatteryear", "Select your year", 
                        unique(Overview_scatter$Year),
                        multiple = FALSE,
                        selected = 2016
@@ -155,7 +161,7 @@ ui <- dashboardPage(title = 'Resale Prices in Singapore from 2012 to 2020', head
 
 server <- function(input, output) {
   output$problem <- renderText({
-    HTML("There is many online property information that claims to be 'cheat sheets' that could help Singaporeans decide on their desired choice of homes.</br></br>
+    HTML("There are many online property information that claims to be 'cheat sheets' that could help Singaporeans decide on their desired choice of homes.</br></br>
     In the context of this project, Resale HDBs is the focal point of our project. Choosing a resale HDB has never been easy as there are many factors to consider such as location, HDB type, number of remaining lease years, resale value, etc.</br></br> 
     On top of that, thousands of Resale HDBs transactions are happening each month, making it almost impossible for an owner to get a view of every transaction. 
          Therefore, the majority of buyers and sellers have to consult property agents for their services.")
@@ -185,8 +191,8 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Average Resale Price`), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred1'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
-      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Average Resale Price", yaxis='y2', 
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Average Resale Price", yaxis='y2', 
                 hovertemplate = '<b>Year</b>: %{x}<br><b>Average Resale Price</b>: $%{y}') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
@@ -198,8 +204,8 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Median Resale Price`)/(median(`Area (SQM)`)*10.7639), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred1'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
-      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Unit Price (PSF)", yaxis='y2',
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Unit Price (PSF)", yaxis='y2',
                 hovertemplate = '<b>Year</b>: %{x}<br><b>Unit Price (PSF)</b>: $%{y}') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
@@ -210,9 +216,9 @@ server <- function(input, output) {
   output$Trellis <- renderPlotly({
     xplot_data <- Overview %>%
       group_by(Year, Flat_Type) %>%
-      summarize(Avg_Resale_Price = median(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
+      summarize(`Median Resale Price` = median(`Average Resale Price`), Sale = sum(Sales), `Unit Price (PSF)`=mean(`Unit Area (PSF)`))
     p <- ggplot(xplot_data,
-                aes(x=Year, y=Avg_Resale_Price, colour=Flat_Type)) +
+                aes(x=Year, y=`Median Resale Price`, colour=Flat_Type)) +
                 geom_line(stat="identity", show.legend=TRUE) +
       theme(legend.position="right")+
       facet_wrap(~Flat_Type)
@@ -225,9 +231,9 @@ server <- function(input, output) {
   output$Trellis1 <- renderPlotly({
     xplot_data <- Overview %>%
       group_by(Year, Flat_Type) %>%
-      summarize(Avg_Resale_Price = median(`Average Resale Price`), Sale = sum(Sales), Unit_Area=mean(`Unit Area (PSF)`))
+      summarize(`Median Resale Price` = median(`Average Resale Price`), Sale = sum(Sales), `Unit Price (PSF)`=mean(`Unit Area (PSF)`))
     p <- ggplot(xplot_data,
-                aes(x=Year, y=Unit_Area, colour=Flat_Type)) +
+                aes(x=Year, y=`Unit Price (PSF)`, colour=Flat_Type)) +
       geom_line(stat="identity", show.legend=TRUE) +
       theme(legend.position="right")+
       facet_wrap(~Flat_Type)
@@ -337,15 +343,15 @@ server <- function(input, output) {
 
   output$distPlot <- renderPlot({ 
     map <- filter(select_data, Year == input$variable, Storey_Level == input$variable1)
-    
     ggplot(map, aes(x=`Year-Month`, y=`Median Unit Price`)) +
       geom_line() +
       facet_geo(~ Code, grid= select_data1, label = "name") +
       scale_x_discrete(guide = guide_axis(n.dodge =2))+
       scale_x_continuous(breaks = c(1,3,5,7,9,11))+
-      labs(title = "Resale HDB Market Trend by HDB Town\n\n",
-           x = "Month\n\n\n",
+      labs(x = "Month\n\n\n",
            y ="Median Unit Price\n\n\n") +
+      ggtitle("Resale HDB Market Trend by HDB Town")+
+      theme(plot.title = element_text(hjust = 0.5))+
       scale_y_continuous(labels = function(x) format(x, big.mark = ",",
                                                      scientific = FALSE)) +
       theme(plot.title = element_text(color = "black",size = 30, face = "bold.italic"),
@@ -356,6 +362,7 @@ server <- function(input, output) {
             panel.border = element_rect(colour = "black", fill = NA, size = 0.2))
   })
 }
+
 
 shinyApp(ui, server)
 
