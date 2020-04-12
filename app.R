@@ -134,12 +134,12 @@ body <- dashboardBody(
     tabItem(tabName = "D3_2",
         fluidRow(column(12,h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;")),
                  sidebarPanel(selectizeInput(inputId = "scatteryear", 
-                                            label = "Select your year", 
+                                            label = "Select a Year", 
                                             choices = c("Select All", unique(Overview_scatter$Year)),
                                             multiple = FALSE,
                                             selected = "Select All"),
                               selectizeInput(inputId = "HDB", 
-                                          label = "Select your HDB Town", 
+                                          label = "Select a HDB Town", 
                                           choices = c("Select All",unique(Overview_scatter$`HDB Town`)), 
                                           selected = "Select All",
                                           multiple = FALSE), width=2),
@@ -317,29 +317,26 @@ server <- function(input, output) {
   # })
   # 
   output$ScatterHist <- renderPlotly({
-    Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
-    HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
+    if ("Select All" %in% input$scatteryear){
+      Year_filter <- Overview_scatter
+    } else{
+      Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
+    }
+    if ("Select All" %in% input$HDB){
+      HDB_Town <- Year_filter
+    } else {
+      HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
+    }
+    # Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
+    # HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
     Scatter_data <- aggregate(HDB_Town[,c(11,13)], list(HDB_Town$resale_price), mean)
     names(Scatter_data)[1] <- "resale_price"
 
     `Resale Price` <- Scatter_data$resale_price
     `Remaining Lease Years` <- Scatter_data$remaining_lease
-    
-    #`Year` <- Scatter_data$Year
-    
+  
     test <- Scatter_data
     
-    # p <- ggplot(Scatter_data, 
-    #             aes(x=`Remaining Lease Years`, 
-    #                 y=`Resale Price`, 
-    #                 color=HDB_Town 
-    #                 )) +
-    #     geom_point() +
-    #     theme(legend.position="none")
-    # 
-    # # with marginal histogram
-    # p1 <- ggMarginal(p, type="histogram")
-
     p1 <- subplot(plot_ly(type='box',
                           color=I("indianred2"),
                           name="Remaining Lease Years") %>%
