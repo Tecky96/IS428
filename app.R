@@ -18,12 +18,13 @@ library(lattice)
 library(geofacet)
 library(plotly)
 
-# for(p in packages){library
-#   if(!require(p, character.only = T)){
-#     install.packages(p)
-#   }
-#   library(p, character.only = T)
-# }
+#-------------------Commented out for Deployment Purpose-----------------------------------#
+for(p in packages){library
+  if(!require(p, character.only = T)){
+    install.packages(p)
+  }
+  library(p, character.only = T)
+}
 
 #-------------------------------Datasets------------------------------#
 realis <- read_csv("data/TreeMap.csv")
@@ -132,16 +133,18 @@ body <- dashboardBody(
 
     tabItem(tabName = "D3_2",
         fluidRow(column(12,h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;")),
-                 column(2, selectizeInput("scatteryear", "Select your year", 
-                       unique(Overview_scatter$Year),
-                       multiple = FALSE,
-                       selected = 2016
-                       )),
-                 column(2, selectizeInput("HDB", "Select your HDB Town", 
-                       unique(Overview_scatter$`HDB Town`), 
-                       multiple = FALSE))),
-        plotlyOutput("ScatterHist", height="700px")
-),
+                 sidebarPanel(selectizeInput(inputId = "scatteryear", 
+                                            label = "Select your year", 
+                                            choices = c("Select All", unique(Overview_scatter$Year)),
+                                            multiple = FALSE,
+                                            selected = "Select All"),
+                              selectizeInput(inputId = "HDB", 
+                                          label = "Select your HDB Town", 
+                                          choices = c("Select All",unique(Overview_scatter$`HDB Town`)), 
+                                          selected = "Select All",
+                                          multiple = FALSE), width=2),
+                 column(10, plotlyOutput("ScatterHist", height="700px"))
+)),
 
 #-------------------------------DATASET TAB------------------------------#
     tabItem(tabName = "sub_1",
@@ -256,7 +259,7 @@ server <- function(input, output) {
                                    `Average Resale Price` =  mean(`Average Resale Price`,na.rm=TRUE),
                                    `Unit Price (PSF)` =  mean(`Unit Area (PSF)`,na.rm=TRUE))
     treemapdata <- filter(realis_summarised, `Year` == input$Year)
-    .tm <<- 
+    tm <- 
       treemap(treemapdata,
               index=c("Planning Region", "HDB Town", "Storey_Level"),
               vSize="Total Unit Sold",
@@ -266,6 +269,7 @@ server <- function(input, output) {
               title="Average Resale HDB Prices by Planning Region and Town",
               title.legend = "Average Resale Price"
       )
+    
   })
   
   output$Treemap1 <- renderPlot({
@@ -299,45 +303,66 @@ server <- function(input, output) {
   })
   
   #---------------------------------------------Dashboard 3---------------------------------------------------#
-  
-  
+  # observe({
+  #   if ("Select All" %in% input$scatteryear)
+  #     Year_filter <- Overview_scatter
+  #   else
+  #     Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
+  # })
+  # observe({
+  #   if ("Select All" %in% input$HDB)
+  #     HDB_Town <- Year_filter
+  #   else
+  #     HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
+  # })
+  # 
   output$ScatterHist <- renderPlotly({
-    
-    Scatter_data <- aggregate(Overview_scatter[,c(11,13)], list(Overview_scatter$resale_price, Overview_scatter$Year), mean)
+    Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
+    HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
+    Scatter_data <- aggregate(HDB_Town[,c(11,13)], list(HDB_Town$resale_price), mean)
     names(Scatter_data)[1] <- "resale_price"
-    names(Scatter_data)[2] <- "Year"
-    
-    #`Unit Price (PSF)` <- Scatter$resale_price/(Scatter$floor_area_sqm*10.7639)
+
     `Resale Price` <- Scatter_data$resale_price
     `Remaining Lease Years` <- Scatter_data$remaining_lease
     
-    `Year` <- Scatter_data$Year
-    test <- filter(Scatter_data, Year == input$scatteryear)
+    #`Year` <- Scatter_data$Year
     
+    test <- Scatter_data
     
-    p1 <- subplot(plot_ly(type='box', 
+    # p <- ggplot(Scatter_data, 
+    #             aes(x=`Remaining Lease Years`, 
+    #                 y=`Resale Price`, 
+    #                 color=HDB_Town 
+    #                 )) +
+    #     geom_point() +
+    #     theme(legend.position="none")
+    # 
+    # # with marginal histogram
+    # p1 <- ggMarginal(p, type="histogram")
+
+    p1 <- subplot(plot_ly(type='box',
                           color=I("indianred2"),
                           name="Remaining Lease Years") %>%
                     add_boxplot(test, type='box',
                                 x=~`Remaining Lease Years`),
-                  plotly_empty(type = "scatter"), 
+                  plotly_empty(type = "scatter"),
                   plot_ly(test,
                           type="scatter",
-                          x=~`Remaining Lease Years`, 
-                          y=~`Resale Price`, 
+                          x=~`Remaining Lease Years`,
+                          y=~`Resale Price`,
                           mode   = 'markers',
                           name = "Resale Price vs Remaining Lease Years",
                           color=I("deepskyblue3")),
-                  plot_ly(type='box', 
+                  plot_ly(type='box',
                           color=I("lightseagreen"),
                           name="Resale Price") %>%
                     add_boxplot(test, type='box',
                                 y=~`Resale Price`),
                   nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
                   shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
-    
+
     p1
-                        
+
   })
   
 
