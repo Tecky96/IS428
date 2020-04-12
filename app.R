@@ -194,9 +194,9 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Average Resale Price`), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}<extra></extra>') %>%
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Average Resale Price", yaxis='y2', 
-                hovertemplate = '<b>Year</b>: %{x}<br><b>Average Resale Price</b>: $%{y}') %>%
+                hovertemplate = '<b>Year</b>: %{x}<br><b>Average Resale Price</b>: %{y:$.0f}<extra></extra>') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
              yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
@@ -207,9 +207,9 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Median Resale Price`)/(median(`Area (SQM)`)*10.7639), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}<extra></extra>') %>%
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Unit Price (PSF)", yaxis='y2',
-                hovertemplate = '<b>Year</b>: %{x}<br><b>Unit Price (PSF)</b>: $%{y}') %>%
+                hovertemplate = '<b>Year</b>: %{x}<br><b>Unit Price (PSF)</b>: %{y:$.0f}<extra></extra>') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
              yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
