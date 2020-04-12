@@ -77,52 +77,52 @@ body <- dashboardBody(
     
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
-            h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            fluidRow(column(2, radioButtons("OverviewPlot", "Choose your plot",
-                                            c("Resale Price" = "Resale",
-                                              "Unit Price" = "Unit"),
-                                            selected="Resale"))), 
-            conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("LB")),
-            conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("LB1")),
-            conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("Trellis")),
-            conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("Trellis1"))
+            fluidRow(column(12,h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;")),
+                     sidebarPanel(radioButtons("OverviewPlot", "Choose your plot",
+                                               c("Resale Price" = "Resale",
+                                                 "Unit Price" = "Unit"),
+                                               selected="Resale"),width=2)),
+                     column(10,conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("LB"))), 
+                     column(10,conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("LB1"))),
+                     column(12,conditionalPanel('input.OverviewPlot=="Resale"', plotlyOutput("Trellis"))),
+                     column(12,conditionalPanel('input.OverviewPlot=="Unit"', plotlyOutput("Trellis1")))
+                     
     ),
 
 #-------------------------------DASHBOARD 2: TREEMAP------------------------------#
     tabItem(tabName = "dashboard2",
             fluidRow(column(12,h1("HDB Floor Categories vs. Pricing", align = "center", style="font-family: Tahoma; font-size: 24px;")),
                      sidebarPanel(sliderInput(
-                                           inputId = "Year", 
-                                           label = "Select Year:", 
-                                           min = min(unique(realis$`Year`)),
-                                           max = max(unique(realis$`Year`)), 
-                                           value = 2020, 
-                                           sep = "",
-                                           animate = animationOptions(loop = TRUE)),
+                                               inputId = "Year", 
+                                               label = "Select Year:", 
+                                               min = min(unique(realis$`Year`)),
+                                               max = max(unique(realis$`Year`)), 
+                                               value = 2020, 
+                                               sep = "",
+                                               animate = animationOptions(loop = TRUE)),
+                                  
                                   radioButtons("Plot", "Choose the visualisation to see:",
                                                c("Resale Price" = "Average Resale Price",
                                                  "Unit Price" = "Unit Price (PSF)"), 
-                                               selected = "Average Resale Price")
-                                ,width=2),
+                                               selected = "Average Resale Price"),width=2),
+                     
                      column(10,conditionalPanel('input.Plot=="Average Resale Price"', plotOutput("Treemap", height="700px"))),
                      column(10,conditionalPanel('input.Plot=="Unit Price (PSF)"', plotOutput("Treemap1", height="700px"))))
-                     # column(2, radioButtons("Plot", "Choose the visualisation to see:",
-                     #         c("Resale Price" = "Average Resale Price",
-                     #           "Unit Price" = "Unit Price (PSF)"), 
-                     #         selected = "Average Resale Price"),"topleft")
     ),
 
 #-------------------------------DASHBOARD 3: ASPATIAL------------------------------#
     tabItem(tabName = "D3_1",
-            h1("GeoFacet of HDB AREA vs Price", align = "center", style="font-family: Tahoma; font-size: 24px;"),
-            box(selectInput(inputId = "variable", "Please select a year",
-                        unique(select_data$Year),
-                        selected = 2012, multiple = FALSE)),
-            box(selectInput(inputId = "variable1","Please select a floor level type",
-                        unique(select_data$Storey_Level),
-                        selected = NULL, multiple = FALSE)),
-            plotOutput("distPlot", hover="info", height="700px", width="100%")
-    ),
+            fluidRow(
+              column(12, h1("GeoFacet of HDB AREA vs Price", align = "center", style="font-family: Tahoma; font-size: 24px;")),
+            sidebarPanel(selectInput(inputId = "variable", "Please select a year",
+                                     unique(select_data$Year),
+                                     selected = 2012, multiple = FALSE),
+                         selectInput(inputId = "variable1","Please select a floor level type",
+                                     unique(select_data$Storey_Level),
+                                     selected = NULL, multiple = FALSE),
+                         width=2),
+            column(10, plotOutput("distPlot", hover="info", height="700px", width="100%"))
+    )),
 
     tabItem(tabName = "D3_2",
         h1("Scatter Plot of Average price vs Area", align = "center", style="font-family: Tahoma; font-size: 24px;"),
@@ -185,8 +185,9 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Average Resale Price`), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('darkolivegreen1'), name = "Unit Area (PSF)") %>%
-      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred1'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Average Resale Price", yaxis='y2', 
+                hovertemplate = '<b>Year</b>: %{x}<br><b>Average Resale Price</b>: $%{y}') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
              yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
@@ -197,8 +198,9 @@ server <- function(input, output) {
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Median Resale Price`)/(median(`Area (SQM)`)*10.7639), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('darkolivegreen1'), name = "Unit Area (PSF)") %>%
-      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Sales", yaxis='y2') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred1'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
+      add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('dark green'), name = "Unit Price (PSF)", yaxis='y2',
+                hovertemplate = '<b>Year</b>: %{x}<br><b>Unit Price (PSF)</b>: $%{y}') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
              yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
