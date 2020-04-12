@@ -1,7 +1,7 @@
 
 packages = c('treemap','tidyverse', 'shiny', 'shinydashboard', 'dplyr', 'ggplot2', 'devtools', 'ggplotly')
 
-install.packages("crosstalk")
+install.packages("d3Tree")
 library(gapminder)
 
 
@@ -29,7 +29,7 @@ view(Overview_scatter)
 select_data <- read_csv('data/Map.csv')
 head(select_data)
 
-Overview2 <- read_csv("data/Overview2.csv")
+Overview2 <- read_csv("data/Scatter.csv")
 View(Overview2)
 
 Overview <- read_csv("data/Overview1.csv")

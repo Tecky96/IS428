@@ -27,11 +27,14 @@ for(p in packages){library
 }
 
 #-------------------------------Datasets------------------------------#
-realis <- read_csv("data/TreeMap.csv")
+
 Overview <- read_csv("data/Overview1.csv")
-Overview_scatter <- read_csv("data/Overview2.csv")
+
+realis <- read_csv("data/TreeMap.csv")
+
 select_data <- read_csv('data/Map.csv')
 select_data1 <- read_csv('data/sg_planning_area_grid1.csv')
+Overview_scatter <- read_csv("data/Scatter.csv")
 
 logo <- img(src="weHouse_logo.png", width=220, height=75, align = "centre")
 
@@ -80,7 +83,7 @@ body <- dashboardBody(
 #-------------------------------DASHBOARD 1: OVERVIEW------------------------------#
     tabItem(tabName = "dashboard1",
             fluidRow(column(12,h1("Overview Dashboard", align = "center", style="font-family: Tahoma; font-size: 24px;")),
-                     column(1, radioButtons("OverviewPlot", "Choose your plot",
+                     column(1, radioButtons("OverviewPlot", "Choose Your Plot",
                                                c("Resale Price" = "Resale",
                                                  "Unit Price" = "Unit"),
                                                selected="Resale")),
@@ -103,7 +106,7 @@ body <- dashboardBody(
                                                sep = "",
                                                animate = animationOptions(loop = TRUE)),
                                   
-                                  radioButtons("Plot", "Choose the visualisation to see:",
+                                  radioButtons("Plot", "Choose Your Plot:",
                                                c("Resale Price" = "Average Resale Price",
                                                  "Unit Price" = "Unit Price (PSF)"), 
                                                selected = "Average Resale Price"),width=2),
@@ -117,7 +120,7 @@ body <- dashboardBody(
             fluidRow(
               column(12, h1("GeoFacet of HDB AREA vs Price", align = "center", style="font-family: Tahoma; font-size: 24px;")),
             sidebarPanel(sliderInput(inputId = "variable", 
-                                     label = "Please select a year",
+                                     label = "Select a Year",
                                      min = min(unique(select_data$Year)),
                                      max = max(unique(select_data$Year)), 
                                      value = 2012, 
@@ -142,7 +145,12 @@ body <- dashboardBody(
                                           label = "Select a HDB Town", 
                                           choices = c("Select All",unique(Overview_scatter$`HDB Town`)), 
                                           selected = "Select All",
-                                          multiple = FALSE), width=2),
+                                          multiple = FALSE),
+                              selectizeInput(inputId = "FLAT", 
+                                             label = "Select a Flat Type", 
+                                             choices = c("Select All",unique(Overview_scatter$Flat_Type)), 
+                                             selected = "Select All",
+                                             multiple = FALSE), width=2),
                  column(10, plotlyOutput("ScatterHist", height="700px"))
 )),
 
@@ -185,35 +193,35 @@ server <- function(input, output) {
          <li>Identify the most expensive streets within each Town area given the floor </li></ul>")
   })
   
-#---testing----#
-  
-
-  
 #---------------------------------------------Dashboard 1---------------------------------------------------#
   output$LB <- renderPlotly({
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Average Resale Price`), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}<extra></extra>') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}') %>%
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Average Resale Price", yaxis='y2', 
                 hovertemplate = '<b>Year</b>: %{x}<br><b>Average Resale Price</b>: %{y:$.0f}<extra></extra>') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
              yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
-             yaxis2 = list(side = 'right', overlaying ="y", title = 'Median Resale Price'))
+             yaxis2 = list(side = 'right', overlaying ="y", title = 'Median Resale Price'))%>%
+      config(displayModeBar = FALSE) %>%
+      layout(hovermode = 'compare')
   })
   
   output$LB1 <- renderPlotly({
     Overview %>%
       group_by(Year) %>%
       summarize(Price = median(`Median Resale Price`)/(median(`Area (SQM)`)*10.7639), Sale = sum(Sales)) %>%
-      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}<extra></extra>') %>%
+      plot_ly(x = ~Year, y = ~Sale, type = "bar", color = I('indianred3'), name = "Sales", hovertemplate = '<b>Year</b>: %{x}<br><b>Sales</b>: %{y}<extra></extra>') %>%     
       add_trace(x = ~Year, y = ~Price, type = "scatter", mode="lines", color = I('lightgreen'), name = "Unit Price (PSF)", yaxis='y2',
                 hovertemplate = '<b>Year</b>: %{x}<br><b>Unit Price (PSF)</b>: %{y:$.0f}<extra></extra>') %>%
       layout(title = "Overview of Resale",
              xaxis = list(title = "Year"),
              yaxis = list(side = 'left', title = "Sales Volume", tickformat=',d'),
-             yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))
+             yaxis2 = list(side = 'right', overlaying ="y", title = 'Unit Price (PSF)'))%>%
+      config(displayModeBar = FALSE) %>%
+      layout(hovermode = 'compare')
   })
   
   output$Trellis <- renderPlotly({
@@ -221,7 +229,10 @@ server <- function(input, output) {
       group_by(Year, Flat_Type) %>%
       summarize(`Median Resale Price` = median(`Average Resale Price`), Sale = sum(Sales), `Unit Price (PSF)`=mean(`Unit Area (PSF)`))
     p <- ggplot(xplot_data,
-                aes(x=Year, y=`Median Resale Price`, colour=Flat_Type)) +
+                aes(x=Year, y=`Median Resale Price`, colour=Flat_Type),
+                text = paste("Year:", Year,
+                             "<br>Median Resale Price: $", `Median Resale Price`,
+                             "<br>Housing Type:", Flat_Type)) +
                 geom_line(stat="identity", show.legend=TRUE) +
       theme(legend.position="right")+
       facet_wrap(~Flat_Type)
@@ -236,7 +247,10 @@ server <- function(input, output) {
       group_by(Year, Flat_Type) %>%
       summarize(`Median Resale Price` = median(`Average Resale Price`), Sale = sum(Sales), `Unit Price (PSF)`=mean(`Unit Area (PSF)`))
     p <- ggplot(xplot_data,
-                aes(x=Year, y=`Unit Price (PSF)`, colour=Flat_Type)) +
+                aes(x=Year, y=`Unit Price (PSF)`, colour=Flat_Type),
+                text = paste("Year:", Year,
+                             "<br>Unit Price (PSF): $", `Unit Price (PSF)`,
+                             "<br>Housing Type:", Flat_Type)) +
       geom_line(stat="identity", show.legend=TRUE) +
       theme(legend.position="right")+
       facet_wrap(~Flat_Type)
@@ -303,19 +317,7 @@ server <- function(input, output) {
   })
   
   #---------------------------------------------Dashboard 3---------------------------------------------------#
-  # observe({
-  #   if ("Select All" %in% input$scatteryear)
-  #     Year_filter <- Overview_scatter
-  #   else
-  #     Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
-  # })
-  # observe({
-  #   if ("Select All" %in% input$HDB)
-  #     HDB_Town <- Year_filter
-  #   else
-  #     HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
-  # })
-  # 
+
   output$ScatterHist <- renderPlotly({
     if ("Select All" %in% input$scatteryear){
       Year_filter <- Overview_scatter
@@ -327,23 +329,26 @@ server <- function(input, output) {
     } else {
       HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
     }
+    if ("Select All" %in% input$FLAT){
+      Flat <- Year_filter
+    } else {
+      Flat <- filter(Year_filter, Flat_Type == input$FLAT)
+    }
     # Year_filter <- filter(Overview_scatter, Year == input$scatteryear)
     # HDB_Town <- filter(Year_filter, `HDB Town` == input$HDB)
-    Scatter_data <- aggregate(HDB_Town[,c(11,13)], list(HDB_Town$resale_price), mean)
+    Scatter_data <- aggregate(Flat[,c(11,13)], list(Flat$resale_price), mean)
     names(Scatter_data)[1] <- "resale_price"
 
     `Resale Price` <- Scatter_data$resale_price
     `Remaining Lease Years` <- Scatter_data$remaining_lease
   
-    test <- Scatter_data
-    
     p1 <- subplot(plot_ly(type='box',
                           color=I("indianred2"),
                           name="Remaining Lease Years") %>%
-                    add_boxplot(test, type='box',
+                    add_boxplot(Scatter_data, type='box',
                                 x=~`Remaining Lease Years`),
                   plotly_empty(type = "scatter"),
-                  plot_ly(test,
+                  plot_ly(Scatter_data,
                           type="scatter",
                           x=~`Remaining Lease Years`,
                           y=~`Resale Price`,
@@ -353,7 +358,7 @@ server <- function(input, output) {
                   plot_ly(type='box',
                           color=I("lightseagreen"),
                           name="Resale Price") %>%
-                    add_boxplot(test, type='box',
+                    add_boxplot(Scatter_data, type='box',
                                 y=~`Resale Price`),
                   nrows = 2, heights = c(0.2, 0.8), widths = c(0.8, 0.2), margin = 0,
                   shareX = TRUE, shareY = TRUE, titleX = FALSE, titleY = FALSE)
