@@ -67,6 +67,7 @@ body <- dashboardBody(
   tabItems(
     tabItem(tabName = "Overview",
             div(tags$img(src='Cheatsheet.jpg', height=300, width=400, align="center"), style="text-align: center;"),
+            h1("Problem"),
             span(uiOutput("problem"),style="font-family: Tahoma; font-size: 18px;
                  color:grey;"),
             h1("Motivation"),
